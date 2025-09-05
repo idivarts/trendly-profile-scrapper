@@ -5,69 +5,300 @@
     <meta charset="utf-8" />
     <title>IG Profile Scraper</title>
     <style>
+        :root {
+            --bg: #0b0c10;
+            --card: #121318;
+            --elev: #181a21;
+            --text: #e8eaf0;
+            --muted: #a9b0c3;
+            --brand: #6c8cff;
+            /* Trendly-ish cool accent */
+            --brand-2: #f0c24b;
+            /* subtle golden accent */
+            --success: #2ecc71;
+            --danger: #ff6b6b;
+            --radius: 12px;
+            --radius-sm: 10px;
+            --shadow: 0 6px 24px rgba(0, 0, 0, .35), 0 2px 6px rgba(0, 0, 0, .25);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
         body {
-            font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-            margin: 12px;
-            width: 340px;
+            height: 100%;
         }
 
-        button {
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            cursor: pointer;
+        body {
+            font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+            margin: 0;
+            width: 380px;
+            background: linear-gradient(180deg, #0b0c10 0%, #0e1117 100%);
+            color: var(--text);
         }
 
-        pre {
-            white-space: pre-wrap;
-            word-break: break-word;
-            background: #f6f6f6;
-            padding: 10px;
+        .wrap {
+            padding: 14px;
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid rgba(255, 255, 255, .06);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, .06);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            letter-spacing: .2px;
+        }
+
+        .brand-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
             border-radius: 8px;
+            background: linear-gradient(135deg, var(--brand-2), #ffe49c);
+            color: #1a1a1a;
+            font-size: 14px;
+            font-weight: 800;
+        }
+
+        h3 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        p {
+            margin: 0;
+            color: var(--muted);
+        }
+
+        .section {
+            padding: 14px 16px;
         }
 
         .row {
             display: flex;
             gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            appearance: none;
+            padding: 9px 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, .08);
+            background: linear-gradient(180deg, var(--elev), #0f1218);
+            color: var(--text);
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform .08s ease, box-shadow .15s ease, border-color .15s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            border-color: rgba(255, 255, 255, .16);
+        }
+
+        .btn:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: linear-gradient(180deg, var(--brand), #5067d6);
+            border-color: rgba(255, 255, 255, .12);
+            color: #fff;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border-color: rgba(255, 255, 255, .18);
+        }
+
+        .helper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            border-radius: var(--radius-sm);
+            background: linear-gradient(180deg, #10131a, #0d1016);
+            border: 1px solid rgba(255, 255, 255, .06);
+            color: var(--muted);
             margin-top: 8px;
+        }
+
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, .08);
+            background: linear-gradient(180deg, #131722, #0f131d);
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .chip .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--brand-2);
+            box-shadow: 0 0 0 2px rgba(240, 194, 75, .15);
+        }
+
+        fieldset {
+            border: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        legend {
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .field {
+            margin: 10px 0;
+        }
+
+        .options {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .opt {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border-radius: 10px;
+            background: #0f1218;
+            border: 1px solid rgba(255, 255, 255, .08);
+            cursor: pointer;
+            user-select: none;
+            color: var(--text);
+        }
+
+        .opt input {
+            accent-color: var(--brand);
+        }
+
+        input[type="text"],
+        input[list] {
+            width: 100%;
+            padding: 10px 12px;
+            background: #0f1218;
+            border: 1px solid rgba(255, 255, 255, .12);
+            border-radius: 10px;
+            color: var(--text);
+        }
+
+        pre {
+            white-space: pre-wrap;
+            word-break: break-word;
+            background: #0f1218;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, .08);
+            max-height: 260px;
+            overflow: auto;
+        }
+
+        .footer {
+            padding: 12px 16px;
+            border-top: 1px solid rgba(255, 255, 255, .06);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .right {
+            display: flex;
+            gap: 8px;
         }
     </style>
 </head>
 
 <body>
-    <h3>IG Profile Scraper</h3>
-    <p>Open an Instagram profile in the active tab, then click Scrape.</p>
-    <div class="row">
-        <button id="scrape">Scrape</button>
-        <button id="download-json" disabled>Download JSON</button>
-        <button id="copy-json" disabled>Copy JSON</button>
+    <div class="wrap card">
+        <div class="header">
+            <div class="brand">
+                <span class="brand-badge">T</span>
+                <div>
+                    <h3>Trendly — IG Profile Scraper</h3>
+                    <p>Scrape a profile then enrich and export JSON</p>
+                </div>
+            </div>
+            <span class="chip"><span class="dot"></span> v1.0</span>
+        </div>
+
+        <div class="section">
+            <div class="row">
+                <button id="scrape" class="btn btn-primary">Scrape</button>
+                <button id="download-json" class="btn" disabled>Download JSON</button>
+                <button id="copy-json" class="btn btn-outline" disabled>Copy JSON</button>
+            </div>
+            <div class="helper" style="margin-top:10px;">
+                Open an Instagram profile in the active tab and click Scrape. For best results, use the /reels view.
+            </div>
+        </div>
+
+        <div class="section" id="enrich-form" style="display:none;">
+            <fieldset class="field">
+                <legend>1) Gender</legend>
+                <div id="gender-group" class="options"></div>
+            </fieldset>
+
+            <fieldset class="field">
+                <legend>2) Influencer Niche</legend>
+                <div class="helper" style="margin:6px 0 8px;">Select all that apply</div>
+                <div id="niche-group" class="options"></div>
+            </fieldset>
+
+            <fieldset class="field">
+                <legend>3) Location</legend>
+                <input id="location-input" list="location-list" placeholder="Start typing a city" />
+                <datalist id="location-list"></datalist>
+            </fieldset>
+
+            <div class="row" style="margin-top:12px;">
+                <button id="confirm-enrich" class="btn btn-primary">Confirm & Generate JSON</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <h4 style="margin:0 0 8px 0;">Result</h4>
+            <pre id="out">No data yet.</pre>
+        </div>
+
+        <div class="footer">
+            <span style="color:var(--muted);">Trendly</span>
+            <div class="right">
+                <button id="download-json" class="btn" disabled style="display:none;">Download</button>
+                <button id="copy-json" class="btn btn-outline" disabled style="display:none;">Copy</button>
+            </div>
+        </div>
     </div>
-
-    <section id="enrich-form" style="display:none; margin-top:12px;">
-        <h4>Add a few details</h4>
-
-        <div style="margin:8px 0;">
-            <div style="font-weight:500;margin-bottom:4px;">1) Gender</div>
-            <div id="gender-group"></div>
-        </div>
-
-        <div style="margin:8px 0;">
-            <div style="font-weight:500;margin-bottom:4px;">2) Influencer Niche (select all that apply)</div>
-            <div id="niche-group"></div>
-        </div>
-
-        <div style="margin:8px 0;">
-            <div style="font-weight:500;margin-bottom:4px;">3) Location (choose or type)</div>
-            <input id="location-input" list="location-list" placeholder="Start typing…"
-                style="width:100%;padding:6px 8px;" />
-            <datalist id="location-list"></datalist>
-        </div>
-
-        <button id="confirm-enrich" style="margin-top:10px;">Confirm & Generate JSON</button>
-    </section>
-
-    <h4>Result</h4>
-    <pre id="out">No data yet.</pre>
 
     <script src="popup.js"></script>
 </body>
