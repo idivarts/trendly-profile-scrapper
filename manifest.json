@@ -1,0 +1,28 @@
+{
+    "manifest_version": 3,
+    "name": "Trendly Profile Scraper",
+    "version": "1.0.0",
+    "description": "Scrape basic data from the currently open Instagram profile page.",
+    "action": {
+        "default_title": "Scrape IG Profile",
+        "default_popup": "popup.html"
+    },
+    "permissions": [
+        "activeTab",
+        "scripting"
+    ],
+    "host_permissions": [
+        "https://www.instagram.com/*"
+    ],
+    "content_scripts": [
+        {
+            "matches": [
+                "https://www.instagram.com/*"
+            ],
+            "js": [
+                "content.js"
+            ],
+            "run_at": "document_idle"
+        }
+    ]
+}

@@ -1,0 +1,51 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>IG Profile Scraper</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+            margin: 12px;
+            width: 340px;
+        }
+
+        button {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        pre {
+            white-space: pre-wrap;
+            word-break: break-word;
+            background: #f6f6f6;
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        .row {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <h3>IG Profile Scraper</h3>
+    <p>Open an Instagram profile in the active tab, then click Scrape.</p>
+    <div class="row">
+        <button id="scrape">Scrape</button>
+        <button id="download-json" disabled>Download JSON</button>
+        <button id="copy-json" disabled>Copy JSON</button>
+    </div>
+    <h4>Result</h4>
+    <pre id="out">No data yet.</pre>
+
+    <script src="popup.js"></script>
+</body>
+
+</html>
