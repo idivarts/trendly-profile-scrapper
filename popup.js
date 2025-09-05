@@ -16,7 +16,7 @@ scrapeBtn.addEventListener('click', async () => {
 
     try {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        if (!tab || !/^https:\/\/www\.instagram\.com\/[^/]+\/?$/.test(tab.url)) {
+        if (!tab || !/^https:\/\/www\.instagram\.com\/[^/]+\/?[^/]+\/?$/.test(tab.url)) {
             out.textContent = 'Please open a profile page like https://www.instagram.com/<username>/ and try again.';
             return;
         }
@@ -62,85 +62,153 @@ downloadBtn.addEventListener('click', () => {
  * Keep this pure; it returns a plain object.
  */
 function scrapeInstagramProfileOnPage() {
-    // Helper: get meta content
-    const meta = (prop) => document.querySelector(`meta[property="${prop}"]`)?.getAttribute('content') || null;
+    // Focus only on sections inside the profile <header> and extract by section index
+    // Section order (based on current IG desktop DOM):
+    // [0] Profile Picture, [1] Top username/actions, [2] Stats, [3] Name/Category/Bio/Links, ...
 
-    // Username from URL
-    const pathParts = location.pathname.split('/').filter(Boolean);
-    const username = pathParts[0] || null;
-
-    // Basic metas
-    const ogTitle = meta('og:title');          // "Full Name (@handle) • Instagram photos and videos"
-    const ogDesc = meta('og:description');    // "X Followers, Y Following, Z Posts - See Instagram photos…"
-    const ogImage = meta('og:image');          // profile picture
-
-    // Parse counts from og:description
-    let followers = null, following = null, posts = null;
-    if (ogDesc) {
-        // Examples: "1,234 followers, 56 following, 78 posts"
-        const lower = ogDesc.toLowerCase();
-        const matchFollowers = lower.match(/([\d.,]+)\s*followers/);
-        const matchFollowing = lower.match(/([\d.,]+)\s*following/);
-        const matchPosts = lower.match(/([\d.,]+)\s*posts?/);
-
-        const toNumber = (s) => s ? Number(s.replace(/[,\.](?=\d{3}\b)/g, '').replace(/,/g, '')) : null;
-
-        followers = matchFollowers ? toNumber(matchFollowers[1]) : null;
-        following = matchFollowing ? toNumber(matchFollowing[1]) : null;
-        posts = matchPosts ? toNumber(matchPosts[1]) : null;
+    const header = document.querySelector('main header');
+    if (!header) {
+        return { error: 'Header not found', raw: null };
     }
 
-    // Try to parse ld+json for better name/description
-    let fullName = null;
-    let bio = null;
-    try {
-        const ldScript = document.querySelector('script[type="application/ld+json"]');
-        if (ldScript?.textContent) {
-            const data = JSON.parse(ldScript.textContent);
-            // Instagram sometimes wraps it in an array
-            const node = Array.isArray(data) ? data.find(x => x['@type'] === 'Person') || data[0] : data;
-            fullName = node?.name || fullName;
-            bio = node?.description || bio;
+    const sections = Array.from(header.querySelectorAll(':scope > section'));
+    const sec = (i) => sections[i] || null;
+
+    // Helpers
+    const text = (el) => (el ? (el.textContent || '').trim() : '');
+    const attr = (el, a) => (el ? el.getAttribute(a) || '' : '');
+
+    function parseCompactNumber(s) {
+        if (!s) return null;
+        const clean = String(s).replace(/[,\s]/g, '').toLowerCase();
+        const m = clean.match(/^(\d+(?:\.\d+)?)([kmb])?$/);
+        if (!m) {
+            const asInt = parseInt(clean, 10);
+            return Number.isFinite(asInt) ? asInt : null;
         }
-    } catch (_) { }
-
-    // If fullName not found, attempt from og:title ("Full Name (@handle) • ...")
-    if (!fullName && ogTitle) {
-        const nameMatch = ogTitle.split('(@')[0].trim();
-        fullName = nameMatch || null;
+        const num = parseFloat(m[1]);
+        const suf = m[2];
+        const mult = suf === 'k' ? 1e3 : suf === 'm' ? 1e6 : suf === 'b' ? 1e9 : 1;
+        return Math.round(num * mult);
     }
 
-    // Guess verified tick near name (best effort)
-    // Look for an svg with aria-label="Verified" in header region
-    let isVerified = false;
-    try {
-        const header = document.querySelector('header') || document;
-        const verifiedSvg = header.querySelector('svg[aria-label="Verified"]');
-        isVerified = Boolean(verifiedSvg);
-    } catch (_) { }
+    function absoluteUrl(href) {
+        try {
+            if (!href) return '';
+            return new URL(href, location.origin).toString();
+        } catch (_) {
+            return href;
+        }
+    }
 
-    // External link (website) if present in header bio area
-    let externalUrl = null;
-    try {
-        // Instagram uses <a> in the bio area; avoid internal links
-        const header = document.querySelector('header') || document;
-        const links = [...header.querySelectorAll('a[href^="http"]')];
-        // Exclude self links to instagram.com
-        const external = links.find(a => !a.href.includes('instagram.com'));
-        externalUrl = external?.href || null;
-    } catch (_) { }
+    // =========================
+    // [0] Profile Picture
+    // =========================
+    const s0 = sec(0);
+    const profilePicEl = s0 ? s0.querySelector('img') : null;
+    const profilePic = profilePicEl ? profilePicEl.src : '';
 
+    // =========================
+    // [1] Top Username / Actions
+    // =========================
+    const s1 = sec(1);
+    const username = text(s1 ? s1.querySelector('h2 span, h2') : null);
+
+    const hasFollowButton = !!(s1 && s1.querySelector('button, div[role="button"]')) &&
+        /follow/i.test(text(s1.querySelector('button, div[role="button"]')));
+    const hasMessageButton = !!(s1 && s1.querySelector('div[role="button"]')) &&
+        /message/i.test(text(s1.querySelector('div[role="button"]')));
+
+    // =========================
+    // [2] Stats: posts / followers / following
+    // =========================
+    const s2 = sec(2);
+    const li = s2 ? s2.querySelectorAll('li') : [];
+
+    // posts
+    const postsText = text(li[0] ? li[0].querySelector('span span, span') : null);
+    const posts = {
+        text: postsText,
+        value: parseCompactNumber(postsText)
+    };
+
+    // followers
+    const followersTitleEl = li[1] ? li[1].querySelector('[title]') : null;
+    const followersTitle = attr(followersTitleEl, 'title'); // often contains the full number like 16,476
+    let followersText = followersTitle || text(li[1] ? li[1].querySelector('span span, span') : null);
+    const followers = {
+        text: followersText,
+        value: parseCompactNumber(followersText)
+    };
+
+    // following
+    const followingText = text(li[2] ? li[2].querySelector('span span, span') : null);
+    const following = {
+        text: followingText,
+        value: parseCompactNumber(followingText)
+    };
+
+    // =========================
+    // [3] Name / Category / Bio / Links (About)
+    // =========================
+    const s3 = sec(3);
+
+    const s3Wrap = s3 ? s3.firstElementChild : null; // wrapper div inside section
+    const s3Els = s3Wrap ? Array.from(s3Wrap.children) : [];
+
+    // Expectation based on stable order:
+    // [0] Full name container (div with span/h1/h2)
+    // [1] (optional/empty) spacer div
+    // [2] Category container (div)
+    // [3] Bio container (span with multiline text + links)
+    // [4] (optional) link button element
+    // [5] Mutual followers anchor (a)
+
+    // Full Name
+    const fullName = text(s3Els[0] ? (s3Els[0].querySelector('span, h1, h2') || s3Els[0]) : null);
+
+    // Category (index-based; fall back to empty string if missing)
+    const category = text(s3Els[2] || null);
+
+    // Bio (index-based; grab the text from the 4th child if present)
+    const bioEl = s3Els[3] || null;
+    const bio = text(bioEl);
+
+    // Links in bio (index-based; only look inside the bio element)
+    const links = bioEl ? Array.from(bioEl.querySelectorAll('a')).map((a) => ({
+        text: text(a),
+        url: absoluteUrl(a.getAttribute('href'))
+    })) : [];
+
+    // Mutual followers blurb (index-based; prefer the 6th child if it's an <a>)
+    let mutualsText = '';
+    if (s3Els[5] && s3Els[5].tagName === 'A') {
+        mutualsText = text(s3Els[5]);
+    } else if (s3Wrap) {
+        // Fallback (still avoids Array.find on NodeList items; single query is fine if index not present)
+        const mEl = s3Wrap.querySelector(':scope > a');
+        mutualsText = text(mEl);
+    }
     return {
-        url: location.href,
-        username,
-        fullName,
-        bio,
-        followers,
-        following,
-        posts,
-        profilePic: ogImage,
-        isVerified,
-        externalUrl,
-        scrapedAt: new Date().toISOString()
+        sectionsCount: sections.length,
+        headerIndexed: true,
+        about: {
+            username,
+            fullName,
+            profilePic,
+            category,
+            bio,
+            links,
+            mutualsText,
+            actions: {
+                hasFollowButton,
+                hasMessageButton
+            }
+        },
+        stats: {
+            posts,
+            followers,
+            following
+        }
     };
 }
