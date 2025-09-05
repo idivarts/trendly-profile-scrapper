@@ -16,8 +16,8 @@ scrapeBtn.addEventListener('click', async () => {
 
     try {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        if (!tab || !/^https:\/\/www\.instagram\.com\/[^/]+\/?[^/]+\/?$/.test(tab.url)) {
-            out.textContent = 'Please open a profile page like https://www.instagram.com/<username>/ and try again.';
+        if (!tab || !/^https:\/\/www\.instagram\.com\/[^/]+\/reels\/?$/.test(tab.url)) {
+            out.textContent = 'Please open a profile page like https://www.instagram.com/<username>/reels/ and try again.';
             return;
         }
 
@@ -189,6 +189,92 @@ function scrapeInstagramProfileOnPage() {
         const mEl = s3Wrap.querySelector(':scope > a');
         mutualsText = text(mEl);
     }
+    // =========================
+    // Reels Grid Section (index-based traversal)
+    // After <header>, skip one sibling element; the **second** sibling <div>
+    // is the container that holds the reels grid.
+    // =========================
+    let reels = { count: 0, items: [] };
+    const mainEl = document.querySelector('main');
+    if (mainEl && header && header.parentElement) {
+        const siblings = Array.from(header.parentElement.children);
+        const hIdx = siblings.indexOf(header);
+        const reelsContainer = siblings[hIdx + 2] || null; // skip one, take second
+
+        if (reelsContainer) {
+            // Collect all anchor cards that link to /reel/
+            const reelAnchors = Array.from(reelsContainer.querySelectorAll('a[href*="/reel/"]'));
+
+            function extractReel(a, idx) {
+                // Thumbnail: first child div with background-image style inside the anchor
+                const thumbDiv = a.querySelector(':scope div[style*="background-image"]');
+                let thumbnail = '';
+                let cover_size_hint = '';
+                if (thumbDiv) {
+                    const style = thumbDiv.getAttribute('style') || '';
+                    const m = style.match(/background-image:\s*url\(("|')?([^"')]+)("|')?\)/i);
+                    if (m) thumbnail = m[2];
+                    const sizeMatch = (thumbnail && (thumbnail.match(/_s(\d+x\d+)/i) || thumbnail.match(/s(\d+x\d+)/i))) || null;
+                    cover_size_hint = sizeMatch ? sizeMatch[1] : '';
+                }
+
+                // Overlays: likes/comments (hover) live under ._aajz > ... > ul > li
+                let likesText = '';
+                let commentsText = '';
+                let likesValue = null;
+                let commentsValue = null;
+                const hoverOverlay = a.querySelector(':scope ._aajz');
+                if (hoverOverlay) {
+                    const ul = hoverOverlay.querySelector('ul');
+                    const lis = ul ? Array.from(ul.children) : [];
+                    const li0 = lis[0] || null;
+                    const li1 = lis[1] || null;
+                    likesText = text(li0 ? li0.querySelector('span span, span') : null);
+                    commentsText = text(li1 ? li1.querySelector('span span, span') : null);
+                    likesValue = parseCompactNumber(likesText);
+                    commentsValue = parseCompactNumber(commentsText);
+                }
+
+                // Views + Pinned are in the gradient strip ._aaj_
+                const strip = a.querySelector(':scope ._aaj_');
+                const pinned = !!(strip && strip.querySelector('[aria-label="Pinned post icon"]'));
+                let viewsText = '';
+                let viewsValue = null;
+                if (strip) {
+                    const viewIcon = strip.querySelector('[aria-label="View count icon"]');
+                    if (viewIcon) {
+                        // index-based sibling: the first <span> after icon within same container
+                        let span = viewIcon.parentElement && viewIcon.parentElement.parentElement
+                            ? viewIcon.parentElement.parentElement.querySelector('span span, span')
+                            : null;
+                        viewsText = text(span);
+                        viewsValue = parseCompactNumber(viewsText);
+                    }
+                }
+
+                const href = a.getAttribute('href') || '';
+                const url = absoluteUrl(href);
+
+                return {
+                    index: idx,
+                    url,
+                    thumbnail,
+                    cover_size_hint,
+                    overlays: {
+                        has_hover_overlay: !!hoverOverlay,
+                        likes: { text: likesText, value: likesValue },
+                        comments: { text: commentsText, value: commentsValue }
+                    },
+                    views: { text: viewsText, value: viewsValue },
+                    pinned
+                };
+            }
+
+            const items = reelAnchors.map(extractReel);
+            reels = { count: items.length, items };
+        }
+    }
+
     return {
         sectionsCount: sections.length,
         headerIndexed: true,
@@ -209,6 +295,7 @@ function scrapeInstagramProfileOnPage() {
             posts,
             followers,
             following
-        }
+        },
+        reels
     };
 }
