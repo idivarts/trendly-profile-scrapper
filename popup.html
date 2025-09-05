@@ -42,6 +42,30 @@
         <button id="download-json" disabled>Download JSON</button>
         <button id="copy-json" disabled>Copy JSON</button>
     </div>
+
+    <section id="enrich-form" style="display:none; margin-top:12px;">
+        <h4>Add a few details</h4>
+
+        <div style="margin:8px 0;">
+            <div style="font-weight:500;margin-bottom:4px;">1) Gender</div>
+            <div id="gender-group"></div>
+        </div>
+
+        <div style="margin:8px 0;">
+            <div style="font-weight:500;margin-bottom:4px;">2) Influencer Niche (select all that apply)</div>
+            <div id="niche-group"></div>
+        </div>
+
+        <div style="margin:8px 0;">
+            <div style="font-weight:500;margin-bottom:4px;">3) Location (choose or type)</div>
+            <input id="location-input" list="location-list" placeholder="Start typing…"
+                style="width:100%;padding:6px 8px;" />
+            <datalist id="location-list"></datalist>
+        </div>
+
+        <button id="confirm-enrich" style="margin-top:10px;">Confirm & Generate JSON</button>
+    </section>
+
     <h4>Result</h4>
     <pre id="out">No data yet.</pre>
 

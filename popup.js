@@ -2,17 +2,111 @@ const scrapeBtn = document.getElementById('scrape');
 const out = document.getElementById('out');
 const downloadBtn = document.getElementById('download-json');
 const copyBtn = document.getElementById('copy-json');
+// Form elements are created in HTML; we'll reference them when needed.
 
 let lastData = null;
+
+const GENDERS = ["male", "female"];
+const NICHES = [
+    "Fashion/Beauty",
+    "Comedy",
+    "Lifestyle",
+    "Food",
+    "Travel",
+    "Tech & Gadgets",
+    "Fitness",
+    "Education",
+    "Gaming",
+    "Music",
+    "Parenting",
+    "Finance"
+];
+const LOCATIONS = [
+    "Mumbai",
+    "Delhi",
+    "Bengaluru",
+    "Hyderabad",
+    "Chennai",
+    "Kolkata",
+    "Pune",
+    "Ahmedabad"
+];
+
+function esc(s) {
+    return String(s || "").replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', '\'': '&#39;' }[c]));
+}
 
 function enableActions(enabled) {
     downloadBtn.disabled = !enabled;
     copyBtn.disabled = !enabled;
 }
 
+function renderManualFieldsForm() {
+    enableActions(false);
+    const formSec = document.getElementById('enrich-form');
+    const genderGroup = document.getElementById('gender-group');
+    const nicheGroup = document.getElementById('niche-group');
+    const datalist = document.getElementById('location-list');
+
+    // Populate gender radios
+    genderGroup.innerHTML = GENDERS.map(g => `
+        <label style="margin-right:12px;">
+            <input type="radio" name="gender" value="${esc(g)}"> ${esc(g)}
+        </label>
+    `).join("\n");
+
+    // Populate niche checkboxes
+    nicheGroup.innerHTML = NICHES.map(n => `
+        <label style="display:inline-block;margin:4px 10px 4px 0;">
+            <input type="checkbox" name="niche" value="${esc(n)}"> ${esc(n)}
+        </label>
+    `).join("\n");
+
+    // Populate location options
+    datalist.innerHTML = LOCATIONS.map(l => `<option value="${esc(l)}"></option>`).join("\n");
+
+    formSec.style.display = 'block';
+
+    // Attach one-time submit listener (if not already attached)
+    const confirmBtn = document.getElementById('confirm-enrich');
+    if (!confirmBtn.dataset.bound) {
+        const locInput = document.getElementById('location-input');
+        confirmBtn.addEventListener('click', () => {
+            // Collect gender
+            const genderEl = /** @type {HTMLInputElement|null} */(document.querySelector('input[name="gender"]:checked'));
+            const gender = genderEl ? genderEl.value : "";
+
+            // Collect niches (multi)
+            const nicheEls = Array.from(document.querySelectorAll('input[name="niche"]:checked'));
+            const niches = nicheEls.map(el => /** @type {HTMLInputElement} */(el).value);
+
+            // Collect location (allow free text)
+            const location = (locInput && locInput.value || "").trim();
+
+            // Merge into lastData
+            lastData = Object.assign({}, lastData || {}, {
+                manual: {
+                    gender,
+                    niches,
+                    location
+                }
+            });
+
+            // Hide form and enable actions
+            formSec.style.display = 'none';
+            out.textContent = 'The data has been successfully scraped and enriched. You can now copy or download the JSON.';
+            enableActions(true);
+        });
+        confirmBtn.dataset.bound = '1';
+    }
+}
+
 scrapeBtn.addEventListener('click', async () => {
     enableActions(false);
     out.textContent = 'Scraping...';
+
+    const formSec = document.getElementById('enrich-form');
+    if (formSec) formSec.style.display = 'none';
 
     try {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -27,8 +121,9 @@ scrapeBtn.addEventListener('click', async () => {
         });
 
         lastData = result;
-        out.textContent = JSON.stringify(result, null, 2);
-        enableActions(true);
+
+        // Render manual enrichment form before enabling actions
+        renderManualFieldsForm();
 
     } catch (err) {
         console.error(err);
