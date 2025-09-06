@@ -7,6 +7,23 @@ const totalCount = $("totalCount");
 function setStatus(msg) { statusText.textContent = msg; }
 function setCount(n) { totalCount.textContent = String(n); }
 
+// Get chrome storage and update the scrappedData variable
+chrome.storage.local.get(["modashScrapedData"]).then((result) => {
+    if (result.modashScrapedData) {
+        scrapedData = Array.isArray(result.modashScrapedData) ? result.modashScrapedData : [];
+        setCount(scrapedData.length);
+        setStatus(`Loaded ${scrapedData.length} items from storage`);
+    } else {
+        setStatus("No stored data. Click Scrape to begin.");
+    }
+})
+
+$("btn-modash-clear").addEventListener("click", async () => {
+    scrapedData = [];
+    setCount(0);
+    setStatus("Cleared data");
+    await chrome.storage.local.remove("modashScrapedData");
+});
 // Ask parent (content script) to scrape
 $("btn-modash-scrape").addEventListener("click", async () => {
     setStatus("Scraping…");
@@ -26,6 +43,10 @@ $("btn-modash-scrape").addEventListener("click", async () => {
         setCount(scrapedData.length);
         setStatus(`Scraped ${scrapedData.length} items`);
         console.log("Scraped data:", scrapedData);
+
+        // save in chrome storage
+        await chrome.storage.local.set({ modashScrapedData: scrapedData });
+
         // If you want to also notify a parent/content script, uncomment:
         // window.postMessage({ source: "trendly_modash_ui", type: "SCRAPE_COMPLETE", payload: scrapedData }, "*");
     } catch (err) {
