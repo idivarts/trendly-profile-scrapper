@@ -4,9 +4,48 @@ const submitBtn = document.getElementById('submit');
 const copyBtn = document.getElementById('copy-json');
 // Form elements are created in HTML; we'll reference them when needed.
 
+/** @typedef {Object} ScrapedProfile
+ * @property {number} sectionsCount
+ * @property {boolean} headerIndexed
+ * @property {Object} about
+ * @property {string} about.username
+ * @property {string} about.fullName
+ * @property {string} about.profilePic
+ * @property {string} about.category
+ * @property {string} about.bio
+ * @property {Array<{text: string, url: string}>} about.links
+ * @property {string} about.mutualsText
+ * @property {Object} about.actions
+ * @property {boolean} about.actions.hasFollowButton
+ * @property {boolean} about.actions.hasMessageButton
+ * @property {Object} stats
+ * @property {{text: string, value: number|null}} stats.posts
+ * @property {{text: string, value: number|null}} stats.followers
+ * @property {{text: string, value: number|null}} stats.following
+ * @property {Object} reels
+ * @property {number} reels.count
+ * @property {Array<{
+ *   index: number,
+ *   url: string,
+ *   thumbnail: string,
+ *   cover_size_hint: string,
+ *   overlays: {
+ *     has_hover_overlay: boolean,
+ *     likes: {text: string, value: number|null},
+ *     comments: {text: string, value: number|null}
+ *   },
+ *   views: {text: string, value: number|null},
+ *   pinned: boolean
+ * }>} reels.items
+ */
+
+/** @type {ScrapedProfile|null} */
 let lastData = null;
 
-const GENDERS = ["male", "female"];
+const GENDERS = [
+    "male",
+    "female"
+];
 const NICHES = [
     "Fashion/Beauty",
     "Comedy",
@@ -121,8 +160,25 @@ scrapeBtn.addEventListener('click', async () => {
         });
 
         lastData = result;
-        out.textContent = 'Result Quality - 90%\nPlease insert the missing details below to enrich the data.';
+        if (lastData.stats.followers.value < 1000 || lastData.stats.followers.value > 500000 || lastData.stats.followers == null) {
+            out.textContent = 'The profile must have between 1,000 and 500,000 followers. Please try another profile.';
+            lastData = null;
+            return;
+        }
 
+        let quality = 0;
+        if (lastData.stats.posts.value > 50) quality++;
+        if (lastData.reels.count > 20) quality++;
+        if (lastData.about.bio && lastData.about.bio.length > 20) quality++;
+        if (lastData.about.links && lastData.about.links.length > 0) quality++;
+        if (lastData.about.category && lastData.about.category.length > 0) quality++;
+        if (quality < 3) {
+            out.textContent = 'Lead Quality Poor\nPlease try another profile.';
+            lastData = null;
+            return;
+        }
+        out.textContent = 'Lead Quality Good'
+        out.textContent += '\nPlease insert the missing details below to enrich the data.';
         // Render manual enrichment form before enabling actions
         renderManualFieldsForm();
 
@@ -152,6 +208,7 @@ submitBtn.addEventListener('click', async () => {
 /**
  * Runs in the page context to scrape profile data.
  * Keep this pure; it returns a plain object.
+ * @returns {ScrapedProfile}
  */
 function scrapeInstagramProfileOnPage() {
     // Focus only on sections inside the profile <header> and extract by section index
