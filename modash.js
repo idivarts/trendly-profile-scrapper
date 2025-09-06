@@ -1,4 +1,3 @@
-// Holds the latest results inside the iframe context
 let scrapedData = [];
 
 const $ = (id) => document.getElementById(id);
@@ -9,13 +8,13 @@ function setStatus(msg) { statusText.textContent = msg; }
 function setCount(n) { totalCount.textContent = String(n); }
 
 // Ask parent (content script) to scrape
-$("btn-scrape").addEventListener("click", () => {
+$("btn-modash-scrape").addEventListener("click", () => {
     setStatus("Scraping…");
     window.parent.postMessage({ source: "trendly_modash_iframe", type: "SCRAPE_REQUEST" }, "*");
 });
 
 // Copy JSON to clipboard
-$("btn-copy").addEventListener("click", async () => {
+$("btn-modash-copy").addEventListener("click", async () => {
     try {
         await navigator.clipboard.writeText(JSON.stringify(scrapedData, null, 2));
         setStatus("JSON copied to clipboard");
@@ -26,7 +25,7 @@ $("btn-copy").addEventListener("click", async () => {
 });
 
 // Download CSV
-$("btn-download").addEventListener("click", () => {
+$("btn-modash-download").addEventListener("click", () => {
     if (!scrapedData.length) {
         setStatus("No data to export. Run Scrape first.");
         return;

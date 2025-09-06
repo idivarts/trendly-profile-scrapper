@@ -2,6 +2,7 @@ const scrapeBtn = document.getElementById('scrape');
 const out = document.getElementById('out');
 const submitBtn = document.getElementById('submit');
 const copyBtn = document.getElementById('copy-json');
+
 // Form elements are created in HTML; we'll reference them when needed.
 
 /** @typedef {Object} ScrapedProfile

@@ -249,11 +249,49 @@
             display: flex;
             gap: 8px;
         }
+
+        /* Tabs header */
+        .tabs {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, .08);
+            background: linear-gradient(180deg, #10131a, #0d1016);
+        }
+
+        .tab-btn {
+            appearance: none;
+            border: 1px solid rgba(255, 255, 255, .12);
+            background: #0f1218;
+            color: var(--text);
+            border-radius: 999px;
+            padding: 8px 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .tab-btn[aria-selected="true"] {
+            background: linear-gradient(180deg, var(--brand), #5067d6);
+            color: #fff;
+            border-color: rgba(255, 255, 255, .2);
+        }
+
+        .tab-spacer {
+            height: 8px;
+        }
     </style>
 </head>
 
 <body>
-    <div class="wrap card">
+    <div class="tabs" role="tablist" aria-label="Scraper target">
+        <button id="tab-ig" class="tab-btn" role="tab" aria-selected="true" aria-controls="panel-ig">Instagram</button>
+        <button id="tab-modash" class="tab-btn" role="tab" aria-selected="false"
+            aria-controls="panel-modash">Modash</button>
+    </div>
+    <div class="tab-spacer"></div>
+
+    <div class="wrap card" id="panel-ig">
         <div class="header">
             <div class="brand">
                 <span class="brand-badge">T</span>
@@ -313,7 +351,36 @@
         </div>
     </div>
 
+    <div class="wrap" id="panel-modash" style="display:none;">
+        <div class="header">
+            <div class="logo" aria-hidden="true"></div>
+            <h1>Trendly Scraper (Modash)</h1>
+        </div>
+
+        <div class="card">
+            <div class="row">
+                <button id="btn-modash-scrape" class="primary">Scrape</button>
+                <button id="btn-modash-download">Download as CSV</button>
+                <button id="btn-modash-copy">Copy as JSON</button>
+            </div>
+
+            <div class="spacer"></div>
+
+            <div class="status">
+                <div id="statusText">Idle</div>
+                <div class="badge">Total: <span id="totalCount">0</span></div>
+            </div>
+
+            <div class="note">
+                Tip: Run “Scrape” before exporting. This is a template—actual scraping will be implemented in
+                <code>modash.js</code>.
+            </div>
+        </div>
+    </div>
+
+    <script src="tab.js"></script>
     <script src="popup.js"></script>
+    <script src="modash.js"></script>
 </body>
 
 </html>
