@@ -1,0 +1,141 @@
+{
+    "data": [
+        {
+            "id": "8beae744-03d9-4745-97a3-b0e33d4dd4d8",
+            "created_at": "2025-09-06T02:21:29.409479",
+            "updated_at": "2025-09-06T02:21:29.438127",
+            "user": {
+                "id": "7ba1f3d5-2a3f-4ef8-b735-bce8d701703c",
+                "name": "Rahul Sinha"
+            },
+            "account": {
+                "id": "f36a76ca-6ace-46b7-b42c-155fef9c1809",
+                "platform_username": "reaug.app",
+                "username": "reaug.app"
+            },
+            "work_platform": {
+                "id": "9bb8913b-ddd9-430b-a66a-d74d846e6c66",
+                "name": "Instagram",
+                "logo_url": "https://cdn.getphyllo.com/platforms_logo/logos/logo_instagram.png"
+            },
+            "username": "reaug.app",
+            "platform_username": "reaug.app",
+            "full_name": "Reaug",
+            "first_name": null,
+            "last_name": null,
+            "nick_name": null,
+            "url": "https://instagram.com/reaug.app",
+            "introduction": "Augmented Reality Restaurant Menu App.\nDownload Now!",
+            "image_url": "https://scontent-iad3-1.xx.fbcdn.net/v/t51.2885-15/62011102_330917674496020_1173078374537494528_n.jpg?_nc_cat=104&ccb=1-7&_nc_sid=7d201b&_nc_ohc=hGbN2zXjuroQ7kNvwFJI6w9&_nc_oc=AdmtUUSNGGrkvW02H2-rr-7O-VXbT9L1GK9EWINRf2cwq9L2WtbHjXO4g8Vbbp0jQvU&_nc_zt=23&_nc_ht=scontent-iad3-1.xx&edm=AL-3X8kEAAAA&oh=00_Afb-2BRb-YFHFDGY4yd-oJ4VxjbQGm2dXgTooU23jvWWVQ&oe=68C158E3",
+            "date_of_birth": null,
+            "external_id": "14689046346",
+            "platform_account_type": null,
+            "category": null,
+            "website": "https://idivarts.page.link/reaug",
+            "reputation": {
+                "follower_count": 6,
+                "following_count": 25,
+                "subscriber_count": null,
+                "paid_subscriber_count": null,
+                "content_count": 7,
+                "content_group_count": null,
+                "watch_time_in_hours": null,
+                "average_open_rate": null,
+                "average_click_rate": null,
+                "like_count": null,
+                "connection_count": null
+            },
+            "emails": [],
+            "phone_numbers": [],
+            "addresses": [],
+            "gender": null,
+            "country": null,
+            "platform_profile_name": "reaug.app",
+            "platform_profile_id": "14689046346",
+            "platform_profile_published_at": null,
+            "is_verified": false,
+            "is_business": true,
+            "work_experiences": null,
+            "education": null,
+            "publications": null,
+            "certifications": null,
+            "volunteer_experiences": null,
+            "honors": null,
+            "projects": null
+        },
+        {
+            "id": "0a40aed1-419e-40f6-866c-79271c301cfe",
+            "created_at": "2025-09-06T02:34:53.386694",
+            "updated_at": "2025-09-06T02:34:53.535232",
+            "user": {
+                "id": "7ba1f3d5-2a3f-4ef8-b735-bce8d701703c",
+                "name": "Rahul Sinha"
+            },
+            "account": {
+                "id": "660b0076-be7e-4c24-abb2-90e3a0ecedf3",
+                "platform_username": "infinite-divers-2031@pages.plusgoogle.com",
+                "username": "infinite-divers-2031@pages.plusgoogle.com"
+            },
+            "work_platform": {
+                "id": "14d9ddf5-51c6-415e-bde6-f8ed36ad7054",
+                "name": "YouTube",
+                "logo_url": "https://cdn.getphyllo.com/platforms_logo/logos/logo_youtube.png"
+            },
+            "username": "infinite-divers-2031@pages.plusgoogle.com",
+            "platform_username": "infinite-divers-2031@pages.plusgoogle.com",
+            "full_name": "Idivarts",
+            "first_name": "Idivarts",
+            "last_name": null,
+            "nick_name": null,
+            "url": "https://youtube.com/@idivarts1137",
+            "introduction": null,
+            "image_url": "https://lh3.googleusercontent.com/a/ACg8ocK8c91CQoG5mPGsqYcTSTEdjdD0IU5PdyEXqBjqVF6UAsUy_aE=s100",
+            "date_of_birth": null,
+            "external_id": "105876445956326479991",
+            "platform_account_type": null,
+            "category": null,
+            "website": null,
+            "reputation": {
+                "follower_count": null,
+                "following_count": null,
+                "subscriber_count": 4,
+                "paid_subscriber_count": null,
+                "content_count": 3,
+                "content_group_count": null,
+                "watch_time_in_hours": null,
+                "average_open_rate": null,
+                "average_click_rate": null,
+                "like_count": null,
+                "connection_count": null
+            },
+            "emails": [
+                {
+                    "type": "WORK",
+                    "email_id": "infinite-divers-2031@pages.plusgoogle.com"
+                }
+            ],
+            "phone_numbers": [],
+            "addresses": [],
+            "gender": null,
+            "country": null,
+            "platform_profile_name": "Idivarts",
+            "platform_profile_id": "UCIvZj0QSlVsDGaCqUgRpBgg",
+            "platform_profile_published_at": "2018-09-12T14:24:09.000000",
+            "is_verified": true,
+            "is_business": true,
+            "work_experiences": null,
+            "education": null,
+            "publications": null,
+            "certifications": null,
+            "volunteer_experiences": null,
+            "honors": null,
+            "projects": null
+        }
+    ],
+    "metadata": {
+        "offset": 0,
+        "limit": 10,
+        "from_date": null,
+        "to_date": null
+    }
+}
