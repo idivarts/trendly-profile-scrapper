@@ -13,28 +13,26 @@
     ],
     "host_permissions": [
         "https://www.instagram.com/*",
-        "https://marketer.modash.io/discovery/*"
+        "https://marketer.modash.io/*"
     ],
     "content_scripts": [
         {
             "matches": [
-                "https://www.instagram.com/*",
-                "https://marketer.modash.io/discovery/*"
+                "https://www.instagram.com/*"
             ],
             "js": [
                 "content.js"
             ],
             "run_at": "document_idle"
-        }
-    ],
-    "web_accessible_resources": [
+        },
         {
-            "resources": [
-                "modash.html"
-            ],
             "matches": [
-                "https://marketer.modash.io/discovery/*"
-            ]
+                "https://marketer.modash.io/*"
+            ],
+            "js": [
+                "content.js"
+            ],
+            "run_at": "document_idle"
         }
     ]
 }
