@@ -1,6 +1,6 @@
 const scrapeBtn = document.getElementById('scrape');
 const out = document.getElementById('out');
-const downloadBtn = document.getElementById('download-json');
+const submitBtn = document.getElementById('submit');
 const copyBtn = document.getElementById('copy-json');
 // Form elements are created in HTML; we'll reference them when needed.
 
@@ -37,7 +37,7 @@ function esc(s) {
 }
 
 function enableActions(enabled) {
-    downloadBtn.disabled = !enabled;
+    submitBtn.disabled = !enabled;
     copyBtn.disabled = !enabled;
 }
 
@@ -50,15 +50,15 @@ function renderManualFieldsForm() {
 
     // Populate gender radios
     genderGroup.innerHTML = GENDERS.map(g => `
-        <label style="margin-right:12px;">
-            <input type="radio" name="gender" value="${esc(g)}"> ${esc(g)}
+        <label class="opt">
+            <input type="radio" name="gender" value="${esc(g)}"> <span>${esc(g)}</span>
         </label>
     `).join("\n");
 
     // Populate niche checkboxes
     nicheGroup.innerHTML = NICHES.map(n => `
-        <label style="display:inline-block;margin:4px 10px 4px 0;">
-            <input type="checkbox" name="niche" value="${esc(n)}"> ${esc(n)}
+        <label class="opt">
+            <input type="checkbox" name="niche" value="${esc(n)}"> <span>${esc(n)}</span>
         </label>
     `).join("\n");
 
@@ -121,6 +121,7 @@ scrapeBtn.addEventListener('click', async () => {
         });
 
         lastData = result;
+        out.textContent = 'Result Quality - 90%\nPlease insert the missing details below to enrich the data.';
 
         // Render manual enrichment form before enabling actions
         renderManualFieldsForm();
@@ -138,18 +139,14 @@ copyBtn.addEventListener('click', async () => {
     setTimeout(() => (copyBtn.textContent = 'Copy JSON'), 1200);
 });
 
-downloadBtn.addEventListener('click', () => {
+submitBtn.addEventListener('click', async () => {
     if (!lastData) return;
-    const blob = new Blob([JSON.stringify(lastData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    const username = lastData.username || 'instagram_profile';
-    a.href = url;
-    a.download = `${username}.json`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+    out.textContent = 'Sending data to server... Please wait!';
+    await navigator.clipboard.writeText(JSON.stringify(lastData, null, 2));
+
+    out.textContent = 'The data is sent to server. You can now proceed to other instagram profiles.';
+    lastData = null
+    enableActions(false);
 });
 
 /**

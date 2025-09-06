@@ -37,6 +37,7 @@
             width: 380px;
             background: linear-gradient(180deg, #0b0c10 0%, #0e1117 100%);
             color: var(--text);
+            font-size: 14px;
         }
 
         .wrap {
@@ -173,44 +174,56 @@
 
         legend {
             font-weight: 600;
-            margin-bottom: 6px;
+            margin-bottom: 10px;
+            font-size: 14px;
         }
 
         .field {
-            margin: 10px 0;
+            margin: 18px 0;
         }
 
         .options {
             display: flex;
-            gap: 10px;
+            gap: 12px;
             flex-wrap: wrap;
         }
 
         .opt {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-            padding: 6px 10px;
-            border-radius: 10px;
+            gap: 10px;
+            padding: 10px 14px;
+            border-radius: 12px;
             background: #0f1218;
-            border: 1px solid rgba(255, 255, 255, .08);
+            border: 1px solid rgba(255, 255, 255, .12);
             cursor: pointer;
             user-select: none;
             color: var(--text);
+            font-size: 14px;
+            min-height: 40px;
+            transition: transform .08s ease, border-color .15s ease;
+        }
+
+        .opt:hover {
+            transform: translateY(-1px);
+            border-color: rgba(255, 255, 255, .2);
         }
 
         .opt input {
             accent-color: var(--brand);
+            width: 18px;
+            height: 18px;
         }
 
         input[type="text"],
         input[list] {
             width: 100%;
-            padding: 10px 12px;
+            padding: 12px 14px;
             background: #0f1218;
             border: 1px solid rgba(255, 255, 255, .12);
             border-radius: 10px;
             color: var(--text);
+            font-size: 14px;
         }
 
         pre {
@@ -255,12 +268,17 @@
         <div class="section">
             <div class="row">
                 <button id="scrape" class="btn btn-primary">Scrape</button>
-                <button id="download-json" class="btn" disabled>Download JSON</button>
                 <button id="copy-json" class="btn btn-outline" disabled>Copy JSON</button>
+                <button id="submit" class="btn" disabled>Submit Profile</button>
             </div>
             <div class="helper" style="margin-top:10px;">
                 Open an Instagram profile in the active tab and click Scrape. For best results, use the /reels view.
             </div>
+        </div>
+
+        <div class="section">
+            <h4 style="margin:0 0 8px 0;">Result</h4>
+            <pre id="out">No data yet.</pre>
         </div>
 
         <div class="section" id="enrich-form" style="display:none;">
@@ -284,11 +302,6 @@
             <div class="row" style="margin-top:12px;">
                 <button id="confirm-enrich" class="btn btn-primary">Confirm & Generate JSON</button>
             </div>
-        </div>
-
-        <div class="section">
-            <h4 style="margin:0 0 8px 0;">Result</h4>
-            <pre id="out">No data yet.</pre>
         </div>
 
         <div class="footer">
