@@ -1,4 +1,4 @@
-(function initTabs() {
+(async function initTabs() {
     const igTab = document.getElementById('tab-ig');
     const modashTab = document.getElementById('tab-modash');
     const igPanel = document.getElementById('panel-ig');
@@ -28,6 +28,10 @@
     igTab.addEventListener('keydown', onKey);
     modashTab.addEventListener('keydown', onKey);
 
-    // Default to Instagram
-    select('ig');
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab || !tab.url.includes("marketer.modash.io")) {
+        select('ig');
+    } else {
+        select('modash');
+    }
 })();

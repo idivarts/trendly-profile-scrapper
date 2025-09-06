@@ -39,7 +39,10 @@ $("btn-modash-scrape").addEventListener("click", async () => {
             func: scrapeModashPage
         });
 
-        scrapedData = Array.isArray(result) ? result : [];
+        localData = Array.isArray(result) ? result : [];
+        const handleSet = new Set(scrapedData.map(item => item.handle));
+        scrapedData.push(...localData.filter(item => !handleSet.has(item.handle)));
+
         setCount(scrapedData.length);
         setStatus(`Scraped ${scrapedData.length} items`);
         console.log("Scraped data:", scrapedData);
