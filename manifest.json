@@ -10,7 +10,8 @@
     "permissions": [
         "activeTab",
         "scripting",
-        "tabs"
+        "tabs",
+        "storage"
     ],
     "host_permissions": [
         "https://www.instagram.com/*",
