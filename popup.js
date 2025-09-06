@@ -44,7 +44,8 @@ let lastData = null;
 
 const GENDERS = [
     "male",
-    "female"
+    "female",
+    "gender-neutral"
 ];
 const NICHES = [
     "Fashion/Beauty",
@@ -58,7 +59,8 @@ const NICHES = [
     "Gaming",
     "Music",
     "Parenting",
-    "Finance"
+    "Finance",
+    "Others"
 ];
 const LOCATIONS = [
     "Mumbai",
