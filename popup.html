@@ -353,21 +353,29 @@
 
     <div class="wrap" id="panel-modash" style="display:none;">
         <div class="header">
-            <div class="logo" aria-hidden="true"></div>
-            <h1>Trendly Scraper (Modash)</h1>
+            <div class="brand">
+                <span class="brand-badge">T</span>
+                <div>
+                    <h3>Trendly — Modash Scraper</h3>
+                    <p>This is used to scrape instagram handles from modash page</p>
+                </div>
+            </div>
+            <span class="chip"><span class="dot"></span> v1.0</span>
         </div>
-
         <div class="card">
             <div class="row">
-                <button id="btn-modash-scrape" class="primary">Scrape</button>
-                <button id="btn-modash-download">Download as CSV</button>
-                <button id="btn-modash-copy">Copy as JSON</button>
+                <button id="btn-modash-scrape" class="btn btn-primary">Scrape</button>
+                <button id="btn-modash-download" class="btn">Download as CSV</button>
+                <button id="btn-modash-copy" class="btn btn-outlined">Copy as JSON</button>
             </div>
 
             <div class="spacer"></div>
 
-            <div class="status">
-                <div id="statusText">Idle</div>
+            <div class="section">
+                <h4 style="margin:0 0 8px 0;">Result</h4>
+                <pre id="statusText">Idle</pre>
+            </div>
+            <div class="section">
                 <div class="badge">Total: <span id="totalCount">0</span></div>
             </div>
 
