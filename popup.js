@@ -75,6 +75,28 @@ const LOCATIONS = [
     "Jaipur"
 ];
 
+// --- Storage helpers for manual enrichment draft ---
+const STORAGE_KEY = 'manualDraft';
+
+async function getManualDraft() {
+    try {
+        const obj = await chrome.storage.local.get(STORAGE_KEY);
+        return obj && obj[STORAGE_KEY] ? obj[STORAGE_KEY] : null;
+    } catch (_) {
+        return null;
+    }
+}
+
+async function saveManualDraft(partial) {
+    const current = (await getManualDraft()) || {};
+    const next = { ...current, ...partial };
+    await chrome.storage.local.set({ [STORAGE_KEY]: next });
+}
+
+async function clearManualDraft() {
+    await chrome.storage.local.remove(STORAGE_KEY);
+}
+
 function esc(s) {
     return String(s || "").replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', '\'': '&#39;' }[c]));
 }
@@ -84,7 +106,7 @@ function enableActions(enabled) {
     copyBtn.disabled = !enabled;
 }
 
-function renderManualFieldsForm() {
+async function renderManualFieldsForm() {
     enableActions(false);
     const formSec = document.getElementById('enrich-form');
     const genderGroup = document.getElementById('gender-group');
@@ -95,11 +117,11 @@ function renderManualFieldsForm() {
     const aestheticsInput = document.getElementById('aesthetics-input');
     const aestheticsValue = document.getElementById('aesthetics-value');
     if (aestheticsInput && aestheticsValue && !aestheticsInput.dataset.bound) {
-        // Set default and bind live update
         if (!aestheticsInput.value) aestheticsInput.value = '50';
         aestheticsValue.textContent = String(aestheticsInput.value);
-        aestheticsInput.addEventListener('input', () => {
+        aestheticsInput.addEventListener('input', async () => {
             aestheticsValue.textContent = String(aestheticsInput.value);
+            await saveManualDraft({ aestheticsScore: Math.max(0, Math.min(100, parseInt(aestheticsInput.value, 10) || 0)) });
         });
         aestheticsInput.dataset.bound = '1';
     }
@@ -121,13 +143,62 @@ function renderManualFieldsForm() {
     // Populate location options
     datalist.innerHTML = LOCATIONS.map(l => `<option value="${esc(l)}"></option>`).join("\n");
 
+    // Restore previous draft (if any)
+    const saved = await getManualDraft();
+
+    // Set gender
+    if (saved && saved.gender) {
+        const gEl = genderGroup.querySelector(`input[name="gender"][value="${CSS.escape(saved.gender)}"]`);
+        if (gEl) gEl.checked = true;
+    }
+
+    // Set niches
+    if (saved && Array.isArray(saved.niches)) {
+        saved.niches.forEach(v => {
+            const nEl = nicheGroup.querySelector(`input[name="niche"][value="${CSS.escape(v)}"]`);
+            if (nEl) nEl.checked = true;
+        });
+    }
+
+    // Set location
+    const locInput = document.getElementById('location-input');
+    if (locInput && saved && typeof saved.location === 'string') {
+        locInput.value = saved.location;
+    }
+
+    // Set aesthetics
+    if (aestheticsInput && aestheticsValue && saved && Number.isFinite(saved.aestheticsScore)) {
+        aestheticsInput.value = String(saved.aestheticsScore);
+        aestheticsValue.textContent = String(saved.aestheticsScore);
+    }
+
+    // Wire up persistence for changes
+    genderGroup.addEventListener('change', async (e) => {
+        const target = e.target;
+        if (target && target.name === 'gender' && target.checked) {
+            await saveManualDraft({ gender: target.value });
+        }
+    }, { once: false });
+
+    nicheGroup.addEventListener('change', async () => {
+        const selected = Array.from(document.querySelectorAll('input[name="niche"]:checked'))
+            .map(el => /** @type {HTMLInputElement} */(el).value);
+        await saveManualDraft({ niches: selected });
+    }, { once: false });
+
+    if (locInput && !locInput.dataset.bound) {
+        locInput.addEventListener('input', async () => {
+            await saveManualDraft({ location: (locInput.value || '').trim() });
+        });
+        locInput.dataset.bound = '1';
+    }
+
     formSec.style.display = 'block';
 
     // Attach one-time submit listener (if not already attached)
     const confirmBtn = document.getElementById('confirm-enrich');
     if (!confirmBtn.dataset.bound) {
-        const locInput = document.getElementById('location-input');
-        confirmBtn.addEventListener('click', () => {
+        confirmBtn.addEventListener('click', async () => {
             // Collect gender
             const genderEl = /** @type {HTMLInputElement|null} */(document.querySelector('input[name="gender"]:checked'));
             const gender = genderEl ? genderEl.value : "";
@@ -143,14 +214,12 @@ function renderManualFieldsForm() {
             const aestheticsInputEl = document.getElementById('aesthetics-input');
             const aestheticsScore = aestheticsInputEl ? Math.max(0, Math.min(100, parseInt(aestheticsInputEl.value, 10) || 0)) : 0;
 
+            // Persist the latest snapshot before merging
+            await saveManualDraft({ gender, niches, location, aestheticsScore });
+
             // Merge into lastData
             lastData = Object.assign({}, lastData || {}, {
-                manual: {
-                    gender,
-                    niches,
-                    location,
-                    aestheticsScore
-                }
+                manual: { gender, niches, location, aestheticsScore }
             });
 
             // Hide form and enable actions
@@ -201,7 +270,7 @@ scrapeBtn.addEventListener('click', async () => {
         out.textContent = 'Lead Quality Good - ' + quality
         out.textContent += '\nPlease insert the missing details below to enrich the data.';
         // Render manual enrichment form before enabling actions
-        renderManualFieldsForm();
+        await renderManualFieldsForm();
 
     } catch (err) {
         console.error(err);
@@ -224,6 +293,7 @@ submitBtn.addEventListener('click', async () => {
     out.textContent = 'The data is sent to server. You can now proceed to other instagram profiles.';
     lastData = null
     enableActions(false);
+    await clearManualDraft();
 });
 
 /**
