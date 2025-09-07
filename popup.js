@@ -76,11 +76,181 @@ const copyBtn = document.getElementById('copy-json');
  *   views: {text: string, value: number|null},
  *   pinned: boolean
  * }>} reels.items
+ * @property {Object} manual
+ * @property {string} manual.gender
+ * @property {string[]} manual.niches
+ * @property {string} manual.location
+ * @property {number} manual.aestheticsScore
  */
 
 /** @type {ScrapedProfile|null} */
 let lastData = null;
 let dataExists = false
+
+// -------- Strict type guards, parsers, and normalizers (no empty/undefined) --------
+// Nothing should be null/undefined/empty string coming out of normalization.
+// Use explicit, human-readable fallbacks for strings; numeric fallbacks are 0; arrays default to [].
+
+/** @template T */
+function isObject(x) { return !!x && typeof x === 'object'; }
+function asString(x, fallback = 'unknown') {
+    if (typeof x === 'string') {
+        const s = x.trim();
+        return s.length ? s : fallback;
+    }
+    if (x == null) return fallback;
+    try {
+        const s = String(x).trim();
+        return s.length ? s : fallback;
+    } catch (_) { return fallback; }
+}
+function asBoolean(x, fallback = false) {
+    if (typeof x === 'boolean') return x;
+    if (typeof x === 'string') {
+        const s = x.trim().toLowerCase();
+        if (['true', '1', 'yes', 'y', 'on'].includes(s)) return true;
+        if (['false', '0', 'no', 'n', 'off'].includes(s)) return false;
+    }
+    if (typeof x === 'number') return x !== 0;
+    return fallback;
+}
+function parseCompactNumberSafe(s) {
+    const str = asString(s, '0').replace(/[\s,]/g, '').toLowerCase();
+    const m = str.match(/^(\d+(?:\.\d+)?)([kmb])?$/);
+    if (m) {
+        const num = parseFloat(m[1]);
+        const suf = m[2];
+        const mult = suf === 'k' ? 1e3 : suf === 'm' ? 1e6 : suf === 'b' ? 1e9 : 1;
+        if (Number.isFinite(num)) return Math.round(num * mult);
+    }
+    const n = parseFloat(str);
+    return Number.isFinite(n) ? n : 0;
+}
+function asNumber(x, fallback = 0) {
+    if (typeof x === 'number' && Number.isFinite(x)) return x;
+    if (typeof x === 'string') return parseCompactNumberSafe(x);
+    return fallback;
+}
+function asUrl(x, fallback = '#') {
+    const s = asString(x, '');
+    if (!s) return fallback;
+    try { return new URL(s, 'https://www.instagram.com').toString(); } catch (_) { return fallback; }
+}
+function normalizeCountPair(pair) {
+    const text = asString(pair && pair.text, '0');
+    const value = asNumber(pair && pair.value);
+    return { text, value };
+}
+
+function normalizeReelItem(it, idx) {
+    return {
+        index: asNumber(isObject(it) && it.index, idx),
+        url: asUrl(isObject(it) && it.url, '#'),
+        thumbnail: asUrl(isObject(it) && it.thumbnail, '#'),
+        cover_size_hint: asString(isObject(it) && it.cover_size_hint, 'unknown'),
+        overlays: {
+            has_hover_overlay: asBoolean(isObject(it) && isObject(it.overlays) && it.overlays.has_hover_overlay, false),
+            likes: normalizeCountPair(isObject(it) && isObject(it.overlays) ? it.overlays.likes : { text: '0', value: 0 }),
+            comments: normalizeCountPair(isObject(it) && isObject(it.overlays) ? it.overlays.comments : { text: '0', value: 0 }),
+        },
+        views: normalizeCountPair(isObject(it) ? it.views : { text: '0', value: 0 }),
+        pinned: asBoolean(isObject(it) && it.pinned, false),
+    };
+}
+
+function defaultScrapedProfile() {
+    return {
+        sectionsCount: 0,
+        headerIndexed: false,
+        about: {
+            username: 'unknown',
+            fullName: 'unknown',
+            profilePic: '#',
+            isVerified: false,
+            category: 'unknown',
+            bio: 'unknown',
+            links: [],
+            mutualsText: 'unknown',
+            actions: { hasFollowButton: false, hasMessageButton: false }
+        },
+        stats: {
+            posts: { text: '0', value: 0 },
+            followers: { text: '0', value: 0 },
+            following: { text: '0', value: 0 }
+        },
+        reels: { count: 0, items: [] }
+        ,
+        manual: {
+            gender: 'unknown',
+            niches: [],
+            location: 'unknown',
+            aestheticsScore: 0
+        }
+    };
+}
+
+/**
+ * Best-effort normalization of unknown input into a fully-populated ScrapedProfile.
+ * No field is left empty/undefined; strings become non-empty, numbers finite, arrays present.
+ * @param {any} raw
+ * @returns {ScrapedProfile}
+ */
+function clampIntRange(x, min, max, fallback = 0) {
+    const n = asNumber(x, fallback);
+    const i = Math.round(n);
+    return Math.max(min, Math.min(max, i));
+}
+
+function normalizeScrapedProfile(raw) {
+    const base = defaultScrapedProfile();
+    const about = isObject(raw) && isObject(raw.about) ? raw.about : {};
+    const stats = isObject(raw) && isObject(raw.stats) ? raw.stats : {};
+    const reels = isObject(raw) && isObject(raw.reels) ? raw.reels : {};
+    const manual = isObject(raw) && isObject(raw.manual) ? raw.manual : {};
+
+    const links = Array.isArray(about.links) ? about.links.map(l => ({
+        text: asString(l && l.text, 'unknown'),
+        url: asUrl(l && l.url, '#')
+    })) : [];
+
+    const items = Array.isArray(reels.items) ? reels.items.map((it, i) => normalizeReelItem(it, i)) : [];
+
+    const normalized = {
+        sectionsCount: asNumber(isObject(raw) && raw.sectionsCount, 0),
+        headerIndexed: asBoolean(isObject(raw) && raw.headerIndexed, false),
+        about: {
+            username: asString(about.username, 'unknown'),
+            fullName: asString(about.fullName, 'unknown'),
+            profilePic: asUrl(about.profilePic, '#'),
+            isVerified: asBoolean(about.isVerified, false),
+            category: asString(about.category, 'unknown'),
+            bio: asString(about.bio, 'unknown'),
+            links,
+            mutualsText: asString(about.mutualsText, 'unknown'),
+            actions: {
+                hasFollowButton: asBoolean(about.actions && about.actions.hasFollowButton, false),
+                hasMessageButton: asBoolean(about.actions && about.actions.hasMessageButton, false)
+            }
+        },
+        stats: {
+            posts: normalizeCountPair(stats.posts || { text: '0', value: 0 }),
+            followers: normalizeCountPair(stats.followers || { text: '0', value: 0 }),
+            following: normalizeCountPair(stats.following || { text: '0', value: 0 })
+        },
+        reels: {
+            count: asNumber(reels.count || items.length, items.length),
+            items
+        },
+        manual: {
+            gender: asString(manual.gender, 'unknown'),
+            niches: Array.isArray(manual.niches) ? manual.niches.map(v => asString(v, 'unknown')) : [],
+            location: asString(manual.location, 'unknown'),
+            aestheticsScore: clampIntRange(manual.aestheticsScore, 0, 100, 0)
+        }
+    };
+
+    return normalized;
+}
 
 // --- Storage helpers for manual enrichment draft ---
 const STORAGE_KEY = 'manualDraft';
@@ -257,8 +427,8 @@ scrapeBtn.addEventListener('click', async () => {
             func: scrapeInstagramProfileOnPage
         });
 
-        lastData = result;
-        if (lastData.stats.followers.value < 1000 || lastData.stats.followers.value > 500000 || lastData.stats.followers == null) {
+        lastData = normalizeScrapedProfile(result);
+        if (lastData.stats.followers.value < 1000 || lastData.stats.followers.value > 500000) {
             out.textContent = 'The profile must have between 1,000 and 500,000 followers. Please try another profile.';
             lastData = null;
             return;
@@ -295,6 +465,7 @@ scrapeBtn.addEventListener('click', async () => {
 
 copyBtn.addEventListener('click', async () => {
     if (!lastData) return;
+    lastData = normalizeScrapedProfile(lastData);
     await navigator.clipboard.writeText(JSON.stringify(lastData, null, 2));
     copyBtn.textContent = 'Copied';
     setTimeout(() => (copyBtn.textContent = 'Copy JSON'), 1200);
@@ -329,6 +500,7 @@ callToUpdate = async () => {
 }
 submitBtn.addEventListener('click', async () => {
     if (!lastData) return;
+    lastData = normalizeScrapedProfile(lastData);
     try {
         out.textContent = 'Sending data to server... Please wait!';
         submitBtn.textContent = 'Submiting...';
