@@ -336,6 +336,15 @@
                 <input id="location-input" list="location-list" placeholder="Start typing a city" />
                 <datalist id="location-list"></datalist>
             </fieldset>
+            <fieldset class="field">
+                <legend>4) Influencer's Aesthetics/Quality</legend>
+                <div class="helper" style="margin:6px 0 8px;">Rate the overall visual quality and consistency of the
+                    profile</div>
+                <div class="options" style="align-items:center; gap:12px;">
+                    <input id="aesthetics-input" type="range" min="0" max="100" step="1" value="50" style="flex:1;" />
+                    <span id="aesthetics-value" class="chip" aria-live="polite">50</span>
+                </div>
+            </fieldset>
 
             <div class="row" style="margin-top:12px;">
                 <button id="confirm-enrich" class="btn btn-primary">Confirm & Generate JSON</button>

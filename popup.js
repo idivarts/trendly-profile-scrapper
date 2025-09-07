@@ -90,6 +90,19 @@ function renderManualFieldsForm() {
     const nicheGroup = document.getElementById('niche-group');
     const datalist = document.getElementById('location-list');
 
+    // Initialize aesthetics slider
+    const aestheticsInput = document.getElementById('aesthetics-input');
+    const aestheticsValue = document.getElementById('aesthetics-value');
+    if (aestheticsInput && aestheticsValue && !aestheticsInput.dataset.bound) {
+        // Set default and bind live update
+        if (!aestheticsInput.value) aestheticsInput.value = '50';
+        aestheticsValue.textContent = String(aestheticsInput.value);
+        aestheticsInput.addEventListener('input', () => {
+            aestheticsValue.textContent = String(aestheticsInput.value);
+        });
+        aestheticsInput.dataset.bound = '1';
+    }
+
     // Populate gender radios
     genderGroup.innerHTML = GENDERS.map(g => `
         <label class="opt">
@@ -125,12 +138,17 @@ function renderManualFieldsForm() {
             // Collect location (allow free text)
             const location = (locInput && locInput.value || "").trim();
 
+            // Collect aesthetics/quality (0-100 integer)
+            const aestheticsInputEl = document.getElementById('aesthetics-input');
+            const aestheticsScore = aestheticsInputEl ? Math.max(0, Math.min(100, parseInt(aestheticsInputEl.value, 10) || 0)) : 0;
+
             // Merge into lastData
             lastData = Object.assign({}, lastData || {}, {
                 manual: {
                     gender,
                     niches,
-                    location
+                    location,
+                    aestheticsScore
                 }
             });
 
@@ -265,6 +283,8 @@ function scrapeInstagramProfileOnPage() {
     // =========================
     const s1 = sec(1);
     const username = text(s1 ? s1.querySelector('h2 span, h2') : null);
+
+    const isVerified = !!(s1 && s1.querySelector('svg[aria-label="Verified"]'));
 
     const hasFollowButton = !!(s1 && s1.querySelector('button, div[role="button"]')) &&
         /follow/i.test(text(s1.querySelector('button, div[role="button"]')));
@@ -434,6 +454,7 @@ function scrapeInstagramProfileOnPage() {
             username,
             fullName,
             profilePic,
+            isVerified,
             category,
             bio,
             links,
