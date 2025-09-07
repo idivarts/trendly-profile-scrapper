@@ -44,10 +44,13 @@ const copyBtn = document.getElementById('copy-json');
 let lastData = null;
 
 const GENDERS = [
-    "Male",
-    "Female",
-    "LGBTQ",
-    "Gender Neutral",
+    "male",
+    "female",
+    "couple",
+    "baby",
+    "animal",
+    "lgbtq",
+    "gender-neutral",
 ];
 
 const NICHES = [
