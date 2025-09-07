@@ -1,3 +1,41 @@
+const LeadAccountID = "rahul-sinha-mac"
+
+const GENDERS = [
+    "male",
+    "female",
+    "couple",
+    "baby",
+    "animal",
+    "lgbtq",
+    "gender-neutral",
+];
+
+const NICHES = [
+    "Fashion / Beauty",
+    "Lifestyle Vlogs",
+    "Food",
+    "Travel",
+    "Fun / Meme",
+    "Health",
+    "Tech",
+    "NSFW",
+    "Others",
+];
+
+const LOCATIONS = [
+    "Mumbai",
+    "Delhi",
+    "Bengaluru",
+    "Hyderabad",
+    "Ahmedabad",
+    "Chennai",
+    "Kolkata",
+    "Pune",
+    "Surat",
+    "Jaipur"
+];
+
+
 const scrapeBtn = document.getElementById('scrape');
 const out = document.getElementById('out');
 const submitBtn = document.getElementById('submit');
@@ -42,41 +80,7 @@ const copyBtn = document.getElementById('copy-json');
 
 /** @type {ScrapedProfile|null} */
 let lastData = null;
-
-const GENDERS = [
-    "male",
-    "female",
-    "couple",
-    "baby",
-    "animal",
-    "lgbtq",
-    "gender-neutral",
-];
-
-const NICHES = [
-    "Fashion / Beauty",
-    "Lifestyle Vlogs",
-    "Food",
-    "Travel",
-    "Fun / Meme",
-    "Health",
-    "Tech",
-    "NSFW",
-    "Others",
-];
-
-const LOCATIONS = [
-    "Mumbai",
-    "Delhi",
-    "Bengaluru",
-    "Hyderabad",
-    "Ahmedabad",
-    "Chennai",
-    "Kolkata",
-    "Pune",
-    "Surat",
-    "Jaipur"
-];
+let dataExists = false
 
 // --- Storage helpers for manual enrichment draft ---
 const STORAGE_KEY = 'manualDraft';
@@ -275,6 +279,14 @@ scrapeBtn.addEventListener('click', async () => {
         // Render manual enrichment form before enabling actions
         await renderManualFieldsForm();
 
+        let data = await callToCheck();
+        dataExists = data.exists
+        if (dataExists) {
+            enableActions(false);
+            await clearManualDraft();
+            out.textContent = 'Data for this profile already exists on the server. Please try another profile.';
+        }
+
     } catch (err) {
         console.error(err);
         out.textContent = `Error: ${err.message}`;
@@ -288,15 +300,51 @@ copyBtn.addEventListener('click', async () => {
     setTimeout(() => (copyBtn.textContent = 'Copy JSON'), 1200);
 });
 
+// username
+callToCheck = async () => {
+    const data = await fetch('https://be.trendly.now/discovery/extension?username=' + encodeURIComponent(lastData.about.username), {
+        method: "GET",
+        headers: {
+            "X-USER-ID": LeadAccountID,
+        },
+    }).then(res => {
+        if (!res.ok) throw new Error(`Server returned ${res.status}`);
+        return res.json();
+    })
+    return data
+}
+callToUpdate = async () => {
+    const data = await fetch('https://be.trendly.now/discovery/extension', {
+        method: "POST",
+        headers: {
+            "X-USER-ID": LeadAccountID,
+            "content-type": "application/json"
+        },
+        body: JSON.stringify(lastData)
+    }).then(res => {
+        if (!res.ok) throw new Error(`Server returned ${res.status}`);
+        return res.json();
+    })
+    return data
+}
 submitBtn.addEventListener('click', async () => {
     if (!lastData) return;
-    out.textContent = 'Sending data to server... Please wait!';
-    await navigator.clipboard.writeText(JSON.stringify(lastData, null, 2));
-
-    out.textContent = 'The data is sent to server. You can now proceed to other instagram profiles.';
-    lastData = null
-    enableActions(false);
-    await clearManualDraft();
+    try {
+        out.textContent = 'Sending data to server... Please wait!';
+        submitBtn.textContent = 'Submiting...';
+        submitBtn.disabled = true;
+        await navigator.clipboard.writeText(JSON.stringify(lastData, null, 2));
+        const data = await callToUpdate();
+        out.textContent = 'The data is sent to server. You can now proceed to other instagram profiles.\n' + JSON.stringify(data);
+        lastData = null
+        enableActions(false);
+        await clearManualDraft();
+    } catch (e) {
+        out.textContent = 'Error: ' + e.message;
+    } finally {
+        submitBtn.textContent = 'Submit Profile';
+        submitBtn.disabled = false;
+    }
 });
 
 /**
