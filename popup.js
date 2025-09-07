@@ -189,17 +189,16 @@ scrapeBtn.addEventListener('click', async () => {
         }
 
         let quality = 0;
-        if (lastData.stats.posts.value > 50) quality++;
-        if (lastData.reels.count > 20) quality++;
-        if (lastData.about.bio && lastData.about.bio.length > 20) quality++;
-        if (lastData.about.links && lastData.about.links.length > 0) quality++;
+        quality += Math.min(lastData.stats.posts.value / 50, 1);
+        quality += Math.min(lastData.reels.count / 20, 1);
+        if (lastData.about.bio && lastData.about.bio.length > 10) quality++;
         if (lastData.about.category && lastData.about.category.length > 0) quality++;
-        if (quality < 3) {
+        if (quality <= 2) {
             out.textContent = 'Lead Quality Poor\nPlease try another profile.';
             lastData = null;
             return;
         }
-        out.textContent = 'Lead Quality Good'
+        out.textContent = 'Lead Quality Good - ' + quality
         out.textContent += '\nPlease insert the missing details below to enrich the data.';
         // Render manual enrichment form before enabling actions
         renderManualFieldsForm();
