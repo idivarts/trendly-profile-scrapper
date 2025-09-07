@@ -44,34 +44,35 @@ const copyBtn = document.getElementById('copy-json');
 let lastData = null;
 
 const GENDERS = [
-    "male",
-    "female",
-    "gender-neutral"
+    "Male",
+    "Female",
+    "LGBTQ",
+    "Gender Neutral",
 ];
+
 const NICHES = [
-    "Fashion/Beauty",
-    "Comedy",
-    "Lifestyle",
+    "Fashion / Beauty",
+    "Lifestyle Vlogs",
     "Food",
     "Travel",
-    "Tech & Gadgets",
-    "Fitness",
-    "Education",
-    "Gaming",
-    "Music",
-    "Parenting",
-    "Finance",
-    "Others"
+    "Fun / Meme",
+    "Health",
+    "Tech",
+    "NSFW",
+    "Others",
 ];
+
 const LOCATIONS = [
     "Mumbai",
     "Delhi",
     "Bengaluru",
     "Hyderabad",
+    "Ahmedabad",
     "Chennai",
     "Kolkata",
     "Pune",
-    "Ahmedabad"
+    "Surat",
+    "Jaipur"
 ];
 
 function esc(s) {
