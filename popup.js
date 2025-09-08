@@ -401,7 +401,7 @@ async function renderManualFieldsForm() {
 
             // Hide form and enable actions
             formSec.style.display = 'none';
-            out.textContent = 'The data has been successfully scraped and enriched. You can now copy or download the JSON.';
+            out.textContent = 'The data has been successfully scraped and enriched. You can now copy or submit the JSON.';
             enableActions(true);
         });
         confirmBtn.dataset.bound = '1';

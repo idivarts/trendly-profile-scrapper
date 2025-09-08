@@ -3,20 +3,24 @@
     "name": "Trendly Profile Scraper",
     "version": "1.0.0",
     "description": "Scrape basic data from the currently open Instagram profile page.",
-    "action": {
-        "default_title": "Scrape IG Profile",
-        "default_popup": "popup.html"
-    },
     "permissions": [
         "activeTab",
         "scripting",
         "tabs",
-        "storage"
+        "storage",
+        "sidePanel"
     ],
     "host_permissions": [
         "https://www.instagram.com/*",
         "https://marketer.modash.io/*"
     ],
+    "background": {
+        "service_worker": "content.js",
+        "type": "module"
+    },
+    "side_panel": {
+        "default_path": "popup.html"
+    },
     "content_scripts": [
         {
             "matches": [
