@@ -449,6 +449,9 @@ scrapeBtn.addEventListener('click', async () => {
         // Render manual enrichment form before enabling actions
         await renderManualFieldsForm();
 
+        const confirmBtn = document.getElementById('confirm-enrich');
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = 'Checking Existing Account...';
         let data = await callToCheck();
         dataExists = data.exists
         if (dataExists) {
@@ -458,6 +461,9 @@ scrapeBtn.addEventListener('click', async () => {
             const formSec = document.getElementById('enrich-form');
             if (formSec) formSec.style.display = 'none';
             scrapeBtn.disabled = true;
+        } else {
+            confirmBtn.textContent = 'Confirm & Prepare Data';
+            confirmBtn.disabled = false;
         }
 
     } catch (err) {
