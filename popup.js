@@ -411,6 +411,7 @@ async function renderManualFieldsForm() {
 scrapeBtn.addEventListener('click', async () => {
     enableActions(false);
     out.textContent = 'Scraping...';
+    lastData = {}
 
     const formSec = document.getElementById('enrich-form');
     if (formSec) formSec.style.display = 'none';
