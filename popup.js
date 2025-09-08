@@ -455,6 +455,9 @@ scrapeBtn.addEventListener('click', async () => {
             enableActions(false);
             await clearManualDraft();
             out.textContent = 'Data for this profile already exists on the server. Please try another profile.';
+            const formSec = document.getElementById('enrich-form');
+            if (formSec) formSec.style.display = 'none';
+            scrapeBtn.disabled = true;
         }
 
     } catch (err) {
