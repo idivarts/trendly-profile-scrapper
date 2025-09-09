@@ -361,43 +361,47 @@
         </div>
 
         <!-- Profile Summary (shown after Confirm) -->
-        <div class="section" id="summary" style="display:none;">
-            <h4 style="margin:0 0 8px 0;">Profile Summary</h4>
+        <div id="summary" style="display:none;">
+            <div class="section">
+                <h4 style="margin:0 0 8px 0;">Profile Summary</h4>
 
-            <div class="row" style="gap:12px; align-items:center; margin-bottom:8px;">
-                <img id="sum-avatar" class="avatar" src="" alt="Profile" />
-                <div>
-                    <div id="sum-fullName" style="font-weight:700;"></div>
-                    <div id="sum-username" style="color:var(--muted);"></div>
-                    <div id="sum-category" style="color:var(--muted);"></div>
+                <div class="row" style="gap:12px; align-items:center; margin-bottom:8px;">
+                    <img id="sum-avatar" class="avatar" src="" alt="Profile" style="display: none;" />
+                    <div>
+                        <div id="sum-fullName" style="font-weight:700;"></div>
+                        <div id="sum-username" style="color:var(--muted);"></div>
+                        <div id="sum-category" style="color:var(--muted);"></div>
+                    </div>
+                </div>
+
+                <div class="helper" id="sum-bio" style="margin:6px 0 12px;"></div>
+
+                <div class="row" style="margin:8px 0;">
+                    <span class="chip">Posts: <span id="sum-posts"></span></span>
+                    <span class="chip">Followers: <span id="sum-followers"></span></span>
+                    <span class="chip">Following: <span id="sum-following"></span></span>
+                    <span class="chip">Reels: <span id="sum-reels"></span></span>
+                </div>
+
+                <div class="row" style="margin:8px 0;">
+                    <span class="chip">Avg views: <span id="sum-avgviews"></span></span>
+                    <span class="chip">Avg likes: <span id="sum-avglikes"></span></span>
+                    <span class="chip">Avg comments: <span id="sum-avgcomments"></span></span>
                 </div>
             </div>
+            <div class="section">
+                <h4 style="margin:0 0 8px 0;">Manual Fields</h4>
+                <div class="row" style="margin:8px 0;">
+                    <span class="chip">Gender: <span id="sum-gender"></span></span>
+                    <span class="chip">Location: <span id="sum-location"></span></span>
+                    <span class="chip">Aesthetics: <span id="sum-aesthetics"></span></span>
+                </div>
 
-            <div class="helper" id="sum-bio" style="margin:6px 0 12px;"></div>
+                <div class="row" id="sum-niches" style="margin:8px 0; gap:8px;"></div>
 
-            <div class="row" style="margin:8px 0;">
-                <span class="chip">Posts: <span id="sum-posts"></span></span>
-                <span class="chip">Followers: <span id="sum-followers"></span></span>
-                <span class="chip">Following: <span id="sum-following"></span></span>
-                <span class="chip">Reels: <span id="sum-reels"></span></span>
-            </div>
-
-            <div class="row" style="margin:8px 0;">
-                <span class="chip">Avg views: <span id="sum-avgviews"></span></span>
-                <span class="chip">Avg likes: <span id="sum-avglikes"></span></span>
-                <span class="chip">Avg comments: <span id="sum-avgcomments"></span></span>
-            </div>
-
-            <div class="row" style="margin:8px 0;">
-                <span class="chip">Gender: <span id="sum-gender"></span></span>
-                <span class="chip">Location: <span id="sum-location"></span></span>
-                <span class="chip">Aesthetics: <span id="sum-aesthetics"></span></span>
-            </div>
-
-            <div class="row" id="sum-niches" style="margin:8px 0; gap:8px;"></div>
-
-            <div class="row" style="margin-top:12px;">
-                <button id="edit-manual" class="btn btn-outline">Edit manual fields</button>
+                <div class="row" style="margin-top:12px;">
+                    <button id="edit-manual" class="btn btn-outline">Edit manual fields</button>
+                </div>
             </div>
         </div>
 

@@ -594,11 +594,16 @@ submitBtn.addEventListener('click', async () => {
         lastData = null
         enableActions(false);
         await clearManualDraft();
+
+        const formSec = document.getElementById('enrich-form');
+        const summarySec = document.getElementById('summary');
+        if (formSec) formSec.style.display = 'none';
+        if (summarySec) summarySec.style.display = 'none';
     } catch (e) {
         out.textContent = 'Error: ' + e.message;
+        submitBtn.disabled = false;
     } finally {
         submitBtn.textContent = 'Submit Profile';
-        submitBtn.disabled = false;
     }
 });
 
