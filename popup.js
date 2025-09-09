@@ -255,6 +255,13 @@ function averageOf(arr) {
     return Math.round(nums.reduce((a, b) => a + b, 0) / nums.length);
 }
 
+function medianOf(arr) {
+    const nums = arr.filter(v => typeof v === 'number' && Number.isFinite(v)).sort((a, b) => a - b);
+    if (nums.length === 0) return 0;
+    const mid = Math.floor(nums.length / 2);
+    return nums.length % 2 !== 0 ? nums[mid] : Math.round((nums[mid - 1] + nums[mid]) / 2);
+}
+
 /**
  * Render the profile summary panel using normalized data.
  * @param {ScrapedProfile} data
@@ -301,9 +308,9 @@ function renderSummary(data) {
     const likes = items.map(it => (it && it.overlays && it.overlays.likes && typeof it.overlays.likes.value === 'number') ? it.overlays.likes.value : NaN);
     const comments = items.map(it => (it && it.overlays && it.overlays.comments && typeof it.overlays.comments.value === 'number') ? it.overlays.comments.value : NaN);
 
-    if (elAvgViews) elAvgViews.textContent = toReadableInt(averageOf(views));
-    if (elAvgLikes) elAvgLikes.textContent = toReadableInt(averageOf(likes));
-    if (elAvgComments) elAvgComments.textContent = toReadableInt(averageOf(comments));
+    if (elAvgViews) elAvgViews.textContent = toReadableInt(medianOf(views));
+    if (elAvgLikes) elAvgLikes.textContent = toReadableInt(medianOf(likes));
+    if (elAvgComments) elAvgComments.textContent = toReadableInt(medianOf(comments));
 
     // Manual fields
     if (elGender) elGender.textContent = d.manual.gender || 'unknown';
