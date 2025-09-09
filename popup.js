@@ -535,6 +535,7 @@ scrapeBtn.addEventListener('click', async () => {
             const formSec = document.getElementById('enrich-form');
             if (formSec) formSec.style.display = 'none';
             renderSummary(lastData);
+            copyBtn.disabled = false;
             // scrapeBtn.disabled = true;
         } else {
             confirmBtn.textContent = 'Confirm & Prepare Data';
