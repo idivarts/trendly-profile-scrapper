@@ -778,7 +778,7 @@ function scrapeInstagramProfileOnPage() {
                 let commentsText = '';
                 let likesValue = null;
                 let commentsValue = null;
-                const hoverOverlay = a.querySelector(':scope ._aajz');
+                const hoverOverlay = a;
                 if (hoverOverlay) {
                     const ul = hoverOverlay.querySelector('ul');
                     const lis = ul ? Array.from(ul.children) : [];
@@ -791,7 +791,7 @@ function scrapeInstagramProfileOnPage() {
                 }
 
                 // Views + Pinned are in the gradient strip ._aaj_
-                const strip = a.querySelector(':scope ._aaj_');
+                const strip = a;
                 const pinned = !!(strip && strip.querySelector('[aria-label="Pinned post icon"]'));
                 let viewsText = '';
                 let viewsValue = null;
