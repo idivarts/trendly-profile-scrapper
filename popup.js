@@ -245,6 +245,106 @@ function enableActions(enabled) {
     copyBtn.disabled = !enabled;
 }
 
+function toReadableInt(n) {
+    return Number.isFinite(n) ? Math.round(n).toLocaleString() : '0';
+}
+
+function averageOf(arr) {
+    const nums = arr.filter(v => typeof v === 'number' && Number.isFinite(v));
+    if (nums.length === 0) return 0;
+    return Math.round(nums.reduce((a, b) => a + b, 0) / nums.length);
+}
+
+/**
+ * Render the profile summary panel using normalized data.
+ * @param {ScrapedProfile} data
+ */
+function renderSummary(data) {
+    const d = normalizeScrapedProfile(data);
+
+    const avatar = document.getElementById('sum-avatar');
+    const elFull = document.getElementById('sum-fullName');
+    const elUser = document.getElementById('sum-username');
+    const elCat = document.getElementById('sum-category');
+    const elBio = document.getElementById('sum-bio');
+
+    const elPosts = document.getElementById('sum-posts');
+    const elFollowers = document.getElementById('sum-followers');
+    const elFollowing = document.getElementById('sum-following');
+    const elReels = document.getElementById('sum-reels');
+
+    const elAvgViews = document.getElementById('sum-avgviews');
+    const elAvgLikes = document.getElementById('sum-avglikes');
+    const elAvgComments = document.getElementById('sum-avgcomments');
+
+    const elGender = document.getElementById('sum-gender');
+    const elLocation = document.getElementById('sum-location');
+    const elAesthetics = document.getElementById('sum-aesthetics');
+    const elNiches = document.getElementById('sum-niches');
+
+    // Top info
+    if (avatar) avatar.src = d.about.profilePic || '';
+    if (elFull) elFull.textContent = d.about.fullName || 'unknown';
+    if (elUser) elUser.textContent = d.about.username ? '@' + d.about.username : 'unknown';
+    if (elCat) elCat.textContent = d.about.category || 'unknown';
+    if (elBio) elBio.textContent = d.about.bio || 'unknown';
+
+    // Base stats
+    if (elPosts) elPosts.textContent = toReadableInt(d.stats.posts.value);
+    if (elFollowers) elFollowers.textContent = toReadableInt(d.stats.followers.value);
+    if (elFollowing) elFollowing.textContent = toReadableInt(d.stats.following.value);
+    if (elReels) elReels.textContent = toReadableInt(d.reels.count);
+
+    // Averages (ignore null/NaN)
+    const items = Array.isArray(d.reels.items) ? d.reels.items : [];
+    const views = items.map(it => (it && it.views && typeof it.views.value === 'number') ? it.views.value : NaN);
+    const likes = items.map(it => (it && it.overlays && it.overlays.likes && typeof it.overlays.likes.value === 'number') ? it.overlays.likes.value : NaN);
+    const comments = items.map(it => (it && it.overlays && it.overlays.comments && typeof it.overlays.comments.value === 'number') ? it.overlays.comments.value : NaN);
+
+    if (elAvgViews) elAvgViews.textContent = toReadableInt(averageOf(views));
+    if (elAvgLikes) elAvgLikes.textContent = toReadableInt(averageOf(likes));
+    if (elAvgComments) elAvgComments.textContent = toReadableInt(averageOf(comments));
+
+    // Manual fields
+    if (elGender) elGender.textContent = d.manual.gender || 'unknown';
+    if (elLocation) elLocation.textContent = d.manual.location || 'unknown';
+    if (elAesthetics) elAesthetics.textContent = String(d.manual.aestheticsScore ?? 0);
+
+    if (elNiches) {
+        elNiches.innerHTML = '';
+        const niches = Array.isArray(d.manual.niches) ? d.manual.niches : [];
+        if (niches.length === 0) {
+            const span = document.createElement('span');
+            span.className = 'chip';
+            span.textContent = 'No niches selected';
+            elNiches.appendChild(span);
+        } else {
+            niches.forEach(n => {
+                const span = document.createElement('span');
+                span.className = 'chip';
+                span.textContent = n;
+                elNiches.appendChild(span);
+            });
+        }
+    }
+
+    // Toggle visibility
+    const formSec = document.getElementById('enrich-form');
+    const summarySec = document.getElementById('summary');
+    if (formSec) formSec.style.display = 'none';
+    if (summarySec) summarySec.style.display = 'block';
+
+    // Edit manual fields
+    const editBtn = document.getElementById('edit-manual');
+    if (editBtn && !editBtn.dataset.bound) {
+        editBtn.addEventListener('click', async () => {
+            if (summarySec) summarySec.style.display = 'none';
+            await renderManualFieldsForm();
+        });
+        editBtn.dataset.bound = '1';
+    }
+}
+
 async function renderManualFieldsForm() {
     enableActions(false);
     const formSec = document.getElementById('enrich-form');
@@ -365,6 +465,8 @@ async function renderManualFieldsForm() {
             formSec.style.display = 'none';
             out.textContent = 'The data has been successfully scraped and enriched. You can now copy or submit the JSON.';
             enableActions(true);
+            // Show summary of key metrics
+            renderSummary(lastData);
         });
         confirmBtn.dataset.bound = '1';
     }
@@ -377,6 +479,8 @@ scrapeBtn.addEventListener('click', async () => {
 
     const formSec = document.getElementById('enrich-form');
     if (formSec) formSec.style.display = 'none';
+    const summarySec = document.getElementById('summary');
+    if (summarySec) summarySec.style.display = 'none';
 
     try {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
