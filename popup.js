@@ -304,9 +304,9 @@ function renderSummary(data) {
 
     // Averages (ignore null/NaN)
     const items = Array.isArray(d.reels.items) ? d.reels.items : [];
-    const views = items.map(it => (it && it.views && typeof it.views.value === 'number') ? it.views.value : NaN);
-    const likes = items.map(it => (it && it.overlays && it.overlays.likes && typeof it.overlays.likes.value === 'number') ? it.overlays.likes.value : NaN);
-    const comments = items.map(it => (it && it.overlays && it.overlays.comments && typeof it.overlays.comments.value === 'number') ? it.overlays.comments.value : NaN);
+    const views = items.map(it => (it && it.views && typeof it.views.value === 'number') ? it.views.value : NaN).filter(v => v);
+    const likes = items.map(it => (it && it.overlays && it.overlays.likes && typeof it.overlays.likes.value === 'number') ? it.overlays.likes.value : NaN).filter(v => v);
+    const comments = items.map(it => (it && it.overlays && it.overlays.comments && typeof it.overlays.comments.value === 'number') ? it.overlays.comments.value : NaN).filter(v => v);
 
     if (elAvgViews) elAvgViews.textContent = toReadableInt(medianOf(views));
     if (elAvgLikes) elAvgLikes.textContent = toReadableInt(medianOf(likes));
