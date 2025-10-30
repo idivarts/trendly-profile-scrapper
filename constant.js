@@ -1,4 +1,4 @@
-const LeadAccountID = "rahul-sinha-mac"
+const LeadAccountID = "jiko-windows-123"
 
 const GENDERS = [
     "male",
@@ -35,6 +35,9 @@ const NICHES = [
     "Health",
     "Tech",
     "NSFW",
+    "Short Story",
+    "Storytelling",
+    "Kids",
     "Others",
 ];
 
