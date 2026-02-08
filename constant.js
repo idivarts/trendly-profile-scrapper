@@ -1,4 +1,4 @@
-const LeadAccountID = "jiko-windows-123"
+const LeadAccountID = "data-intern-2"
 
 const GENDERS = [
     "male",
@@ -34,6 +34,9 @@ const NICHES = [
     "Parenting",
     "Health",
     "Tech",
+    "Pets",
+    "Dogs",
+    "Cats",
     "NSFW",
     "Short Story",
     "Storytelling",
