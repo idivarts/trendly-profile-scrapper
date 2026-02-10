@@ -187,27 +187,33 @@ btnConfirm.addEventListener('click', async () => {
     }
 });
 
-// --- Auto-init on popup open ---
+// --- Extract username from a URL ---
 
-(async function init() {
+function extractUsername(url) {
+    const match = url?.match(/^https:\/\/www\.instagram\.com\/([^/]+)/);
+    const username = match ? match[1] : null;
+    if (!username || ['reels', 'explore', 'direct', 'accounts', 'stories', 'p'].includes(username)) {
+        return null;
+    }
+    return username;
+}
+
+// --- Core profile flow (reusable) ---
+
+async function runProfileFlow(username) {
+    // Reset UI
+    formSec.style.display = 'none';
+    confirmView.style.display = 'none';
+    btnConfirm.disabled = false;
+    btnConfirm.textContent = 'Confirm & Submit';
+    btnEdit.disabled = false;
+
+    lastData = normalizeScrapedProfile({ username });
+    usernameEl.textContent = '@' + lastData.username;
+    usernameSection.style.display = 'block';
+    setStatus('Checking if profile exists...');
+
     try {
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-
-        const match = tab?.url?.match(/^https:\/\/www\.instagram\.com\/([^/]+)/);
-        const username = match ? match[1] : null;
-
-        if (!username || ['reels', 'explore', 'direct', 'accounts', 'stories', 'p'].includes(username)) {
-            setStatus('Open an Instagram profile page and reopen this extension.', 'error');
-            return;
-        }
-
-        // Valid profile detected
-        lastData = normalizeScrapedProfile({ username });
-        usernameEl.textContent = '@' + lastData.username;
-        usernameSection.style.display = 'block';
-        setStatus('Checking if profile exists...');
-
-        // Check if profile already exists on server
         const checkResult = await callToCheck();
 
         if (checkResult.exists) {
@@ -215,9 +221,47 @@ btnConfirm.addEventListener('click', async () => {
             return;
         }
 
-        // New profile -- show the enrichment form
         setStatus('New profile detected. Fill in the details and click Scrape.');
         showForm();
+    } catch (err) {
+        console.error(err);
+        setStatus('Error: ' + err.message, 'error');
+    }
+}
+
+// --- Auto-init on popup open ---
+
+(async function init() {
+    try {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        const username = extractUsername(tab?.url);
+
+        if (!username) {
+            setStatus('Open an Instagram profile page and reopen this extension.', 'error');
+            return;
+        }
+
+        await runProfileFlow(username);
+
+        // Listen for URL changes in the active tab
+        chrome.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
+            if (tabId !== tab.id || !changeInfo.url) return;
+
+            const newUsername = extractUsername(changeInfo.url);
+            const currentUsername = lastData?.username;
+
+            if (!newUsername) {
+                formSec.style.display = 'none';
+                confirmView.style.display = 'none';
+                usernameSection.style.display = 'none';
+                setStatus('Open an Instagram profile page.', 'error');
+                return;
+            }
+
+            if (newUsername !== currentUsername) {
+                await runProfileFlow(newUsername);
+            }
+        });
 
     } catch (err) {
         console.error(err);
