@@ -229,6 +229,25 @@ async function runProfileFlow(username) {
     }
 }
 
+// --- Handle a new URL (from any source) ---
+
+async function handleNewUrl(url) {
+    const newUsername = extractUsername(url);
+    const currentUsername = lastData?.username;
+
+    if (!newUsername) {
+        formSec.style.display = 'none';
+        confirmView.style.display = 'none';
+        usernameSection.style.display = 'none';
+        setStatus('Open an Instagram profile page.', 'error');
+        return;
+    }
+
+    if (newUsername !== currentUsername) {
+        await runProfileFlow(newUsername);
+    }
+}
+
 // --- Auto-init on popup open ---
 
 (async function init() {
@@ -238,29 +257,23 @@ async function runProfileFlow(username) {
 
         if (!username) {
             setStatus('Open an Instagram profile page and reopen this extension.', 'error');
-            return;
+        } else {
+            await runProfileFlow(username);
         }
 
-        await runProfileFlow(username);
-
-        // Listen for URL changes in the active tab
+        // Listen for URL changes within any tab
         chrome.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
-            if (tabId !== tab.id || !changeInfo.url) return;
+            if (!changeInfo.url) return;
+            // Only react if this tab is currently active
+            const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            if (activeTab?.id !== tabId) return;
+            await handleNewUrl(changeInfo.url);
+        });
 
-            const newUsername = extractUsername(changeInfo.url);
-            const currentUsername = lastData?.username;
-
-            if (!newUsername) {
-                formSec.style.display = 'none';
-                confirmView.style.display = 'none';
-                usernameSection.style.display = 'none';
-                setStatus('Open an Instagram profile page.', 'error');
-                return;
-            }
-
-            if (newUsername !== currentUsername) {
-                await runProfileFlow(newUsername);
-            }
+        // Listen for tab switches
+        chrome.tabs.onActivated.addListener(async (activeInfo) => {
+            const newTab = await chrome.tabs.get(activeInfo.tabId);
+            await handleNewUrl(newTab.url);
         });
 
     } catch (err) {
