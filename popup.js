@@ -16,7 +16,7 @@ const btnEdit = document.getElementById('btn-edit');
  * @property {string} username
  * @property {Object} manual
  * @property {string[]} manual.niches
- * @property {number} manual.aestheticsScore
+ * @property {number} manual.qualityScore
  */
 
 /** @type {ScrapedProfile|null} */
@@ -36,8 +36,8 @@ function normalizeScrapedProfile(raw) {
         username: (raw && typeof raw.username === 'string') ? raw.username.trim() : 'unknown',
         manual: {
             niches: Array.isArray(manual.niches) ? manual.niches : [],
-            aestheticsScore: (typeof manual.aestheticsScore === 'number')
-                ? Math.max(0, Math.min(5, manual.aestheticsScore)) : 0
+            qualityScore: (typeof manual.qualityScore === 'number')
+                ? Math.max(0, Math.min(5, manual.qualityScore)) : 0
         }
     };
 }
@@ -126,7 +126,7 @@ function showConfirmation() {
     // Build lastData
     lastData = normalizeScrapedProfile({
         username: lastData.username,
-        manual: { niches, aestheticsScore: selectedStars }
+        manual: { niches, qualityScore: selectedStars }
     });
 
     // Render stars text
