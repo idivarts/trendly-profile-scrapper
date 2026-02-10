@@ -1,9 +1,16 @@
-const scrapeBtn = document.getElementById('scrape');
-const out = document.getElementById('out');
-const submitBtn = document.getElementById('submit');
-const copyBtn = document.getElementById('copy-json');
+// --- DOM references ---
+const statusEl = document.getElementById('ig-status');
+const usernameSection = document.getElementById('ig-username-section');
+const usernameEl = document.getElementById('ig-username');
+const formSec = document.getElementById('enrich-form');
+const confirmView = document.getElementById('confirm-view');
+const nicheGroup = document.getElementById('niche-group');
+const starGroup = document.getElementById('star-group');
+const btnScrape = document.getElementById('btn-scrape');
+const btnConfirm = document.getElementById('btn-confirm');
+const btnEdit = document.getElementById('btn-edit');
 
-// Form elements are created in HTML; we'll reference them when needed.
+// --- State ---
 
 /** @typedef {Object} ScrapedProfile
  * @property {string} username
@@ -14,264 +21,53 @@ const copyBtn = document.getElementById('copy-json');
 
 /** @type {ScrapedProfile|null} */
 let lastData = null;
-let dataExists = false
+let selectedStars = 0;
 
-function defaultScrapedProfile() {
-    return {
-        username: 'unknown',
-        manual: {
-            niches: [],
-            aestheticsScore: 0
-        }
-    };
+// --- Helpers ---
+
+function esc(s) {
+    return String(s || '').replace(/[&<>"']/g, c =>
+        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
-/**
- * Best-effort normalization of unknown input into a fully-populated ScrapedProfile.
- * @param {any} raw
- * @returns {ScrapedProfile}
- */
 function normalizeScrapedProfile(raw) {
     const manual = (raw && typeof raw.manual === 'object') ? raw.manual : {};
     return {
         username: (raw && typeof raw.username === 'string') ? raw.username.trim() : 'unknown',
         manual: {
             niches: Array.isArray(manual.niches) ? manual.niches : [],
-            aestheticsScore: (typeof manual.aestheticsScore === 'number') ? Math.max(0, Math.min(100, manual.aestheticsScore)) : 0
+            aestheticsScore: (typeof manual.aestheticsScore === 'number')
+                ? Math.max(0, Math.min(5, manual.aestheticsScore)) : 0
         }
     };
 }
 
-// --- Storage helpers for manual enrichment draft ---
-const STORAGE_KEY = 'manualDraft';
-
-async function getManualDraft() {
-    try {
-        const obj = await chrome.storage.local.get(STORAGE_KEY);
-        return obj && obj[STORAGE_KEY] ? obj[STORAGE_KEY] : null;
-    } catch (_) {
-        return null;
-    }
+function setStatus(msg, type) {
+    statusEl.textContent = msg;
+    statusEl.className = 'status-msg' + (type ? ' ' + type : '');
 }
 
-async function saveManualDraft(partial) {
-    const current = (await getManualDraft()) || {};
-    const next = { ...current, ...partial };
-    await chrome.storage.local.set({ [STORAGE_KEY]: next });
-}
+// --- Star rating ---
 
-async function clearManualDraft() {
-    await chrome.storage.local.remove(STORAGE_KEY);
-}
-
-function esc(s) {
-    return String(s || "").replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', '\'': '&#39;' }[c]));
-}
-
-function enableActions(enabled) {
-    submitBtn.disabled = !enabled;
-    copyBtn.disabled = !enabled;
-}
-
-/**
- * Render the profile summary panel using normalized data.
- * @param {ScrapedProfile} data
- */
-function renderSummary(data) {
-    const d = normalizeScrapedProfile(data);
-
-    const elUser = document.getElementById('sum-username');
-    const elAesthetics = document.getElementById('sum-aesthetics');
-    const elNiches = document.getElementById('sum-niches');
-
-    // Top info
-    if (elUser) elUser.textContent = d.username ? '@' + d.username : 'unknown';
-
-    // Manual fields
-    if (elAesthetics) elAesthetics.textContent = String(d.manual.aestheticsScore ?? 0);
-
-    if (elNiches) {
-        elNiches.innerHTML = '';
-        const niches = Array.isArray(d.manual.niches) ? d.manual.niches : [];
-        if (niches.length === 0) {
-            const span = document.createElement('span');
-            span.className = 'chip';
-            span.textContent = 'No niches selected';
-            elNiches.appendChild(span);
-        } else {
-            niches.forEach(n => {
-                const span = document.createElement('span');
-                span.className = 'chip';
-                span.textContent = n;
-                elNiches.appendChild(span);
-            });
-        }
-    }
-
-    // Toggle visibility
-    const formSec = document.getElementById('enrich-form');
-    const summarySec = document.getElementById('summary');
-    if (formSec) formSec.style.display = 'none';
-    if (summarySec) summarySec.style.display = 'block';
-
-    // Edit manual fields
-    const editBtn = document.getElementById('edit-manual');
-    if (editBtn && !editBtn.dataset.bound) {
-        editBtn.addEventListener('click', async () => {
-            if (summarySec) summarySec.style.display = 'none';
-            await renderManualFieldsForm();
+function renderStars() {
+    starGroup.innerHTML = '';
+    for (let i = 1; i <= 5; i++) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'star' + (i <= selectedStars ? ' active' : '');
+        btn.textContent = i <= selectedStars ? '\u2605' : '\u2606';
+        btn.setAttribute('aria-label', i + ' star' + (i > 1 ? 's' : ''));
+        btn.addEventListener('click', () => {
+            // Toggle off if re-pressing the same star
+            selectedStars = (selectedStars === i) ? 0 : i;
+            renderStars();
         });
-        editBtn.dataset.bound = '1';
+        starGroup.appendChild(btn);
     }
 }
 
-async function renderManualFieldsForm() {
-    enableActions(false);
-    const formSec = document.getElementById('enrich-form');
-    const nicheGroup = document.getElementById('niche-group');
+// --- API calls (kept from original) ---
 
-    // Initialize aesthetics slider
-    const aestheticsInput = document.getElementById('aesthetics-input');
-    const aestheticsValue = document.getElementById('aesthetics-value');
-    if (aestheticsInput && aestheticsValue && !aestheticsInput.dataset.bound) {
-        if (!aestheticsInput.value) aestheticsInput.value = '50';
-        aestheticsValue.textContent = String(aestheticsInput.value);
-        aestheticsInput.addEventListener('input', async () => {
-            aestheticsValue.textContent = String(aestheticsInput.value);
-            await saveManualDraft({ aestheticsScore: Math.max(0, Math.min(100, parseInt(aestheticsInput.value, 10) || 0)) });
-        });
-        aestheticsInput.dataset.bound = '1';
-    }
-
-    // Populate niche checkboxes
-    nicheGroup.innerHTML = NICHES.map(n => `
-        <label class="opt">
-            <input type="checkbox" name="niche" value="${esc(n)}"> <span>${esc(n)}</span>
-        </label>
-    `).join("\n");
-
-    // Restore previous draft (if any)
-    const saved = await getManualDraft();
-
-    // Set niches
-    if (saved && Array.isArray(saved.niches)) {
-        saved.niches.forEach(v => {
-            const nEl = nicheGroup.querySelector(`input[name="niche"][value="${CSS.escape(v)}"]`);
-            if (nEl) nEl.checked = true;
-        });
-    }
-
-    // Set aesthetics
-    if (aestheticsInput && aestheticsValue && saved && Number.isFinite(saved.aestheticsScore)) {
-        aestheticsInput.value = String(saved.aestheticsScore);
-        aestheticsValue.textContent = String(saved.aestheticsScore);
-    }
-
-    // Wire up persistence for changes
-    nicheGroup.addEventListener('change', async () => {
-        const selected = Array.from(document.querySelectorAll('input[name="niche"]:checked'))
-            .map(el => /** @type {HTMLInputElement} */(el).value);
-        await saveManualDraft({ niches: selected });
-    }, { once: false });
-
-    formSec.style.display = 'block';
-
-    // Attach one-time submit listener (if not already attached)
-    const confirmBtn = document.getElementById('confirm-enrich');
-    if (!confirmBtn.dataset.bound) {
-        confirmBtn.addEventListener('click', async () => {
-            // Collect niches (multi)
-            const nicheEls = Array.from(document.querySelectorAll('input[name="niche"]:checked'));
-            const niches = nicheEls.map(el => /** @type {HTMLInputElement} */(el).value);
-
-            // Collect aesthetics/quality (0-100 integer)
-            const aestheticsInputEl = document.getElementById('aesthetics-input');
-            const aestheticsScore = aestheticsInputEl ? Math.max(0, Math.min(100, parseInt(aestheticsInputEl.value, 10) || 0)) : 0;
-
-            // Persist the latest snapshot before merging
-            await saveManualDraft({ niches, aestheticsScore });
-
-            // Merge into lastData
-            lastData = Object.assign({}, lastData || {}, {
-                manual: { niches, aestheticsScore }
-            });
-
-            // Hide form and enable actions
-            formSec.style.display = 'none';
-            out.textContent = 'The data has been successfully scraped and enriched. You can now copy or submit the JSON.';
-            enableActions(true);
-            // Show summary of key metrics
-            renderSummary(lastData);
-        });
-        confirmBtn.dataset.bound = '1';
-    }
-}
-
-scrapeBtn.addEventListener('click', async () => {
-    enableActions(false);
-    out.textContent = 'Extracting username...';
-    lastData = {}
-
-    const formSec = document.getElementById('enrich-form');
-    if (formSec) formSec.style.display = 'none';
-    const summarySec = document.getElementById('summary');
-    if (summarySec) summarySec.style.display = 'none';
-
-    try {
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-
-        // Extract username from URL: instagram.com/username/ or instagram.com/username/reels/ etc.
-        const match = tab?.url?.match(/^https:\/\/www\.instagram\.com\/([^/]+)/);
-        const username = match ? match[1] : null;
-
-        if (!username || ['reels', 'explore', 'direct', 'accounts'].includes(username)) {
-            out.textContent = 'Please open an Instagram profile page and try again.';
-            enableActions(false);
-            return;
-        }
-
-        lastData = normalizeScrapedProfile({ username });
-        out.textContent = 'Profile identified: @' + lastData.username;
-        out.textContent += '\nPlease insert the details below to enrich the data.';
-
-        // Render manual enrichment form
-        await renderManualFieldsForm();
-
-        const confirmBtn = document.getElementById('confirm-enrich');
-        confirmBtn.disabled = true;
-        confirmBtn.textContent = 'Checking Existing Account...';
-
-        let data = await callToCheck();
-        dataExists = data.exists
-
-        if (dataExists) {
-            enableActions(false);
-            await clearManualDraft();
-            out.textContent = 'Data for this profile already exists on the server. Please try another profile.';
-            const formSec = document.getElementById('enrich-form');
-            if (formSec) formSec.style.display = 'none';
-            renderSummary(lastData);
-            copyBtn.disabled = false;
-        } else {
-            confirmBtn.textContent = 'Confirm & Prepare Data';
-            confirmBtn.disabled = false;
-        }
-
-    } catch (err) {
-        console.error(err);
-        out.textContent = `Error: ${err.message}`;
-    }
-});
-
-copyBtn.addEventListener('click', async () => {
-    if (!lastData) return;
-    lastData = normalizeScrapedProfile(lastData);
-    await navigator.clipboard.writeText(JSON.stringify(lastData, null, 2));
-    copyBtn.textContent = 'Copied';
-    setTimeout(() => (copyBtn.textContent = 'Copy JSON'), 1200);
-});
-
-// username
 callToCheck = async () => {
     const data = await fetch(`https://be.trendly.now${IS_DEV ? "/dev" : ""}/discovery/extension/instagram?username=` + encodeURIComponent(lastData.username), {
         method: "GET",
@@ -281,9 +77,9 @@ callToCheck = async () => {
     }).then(res => {
         if (!res.ok) throw new Error(`Server returned ${res.status}`);
         return res.json();
-    })
-    return data
-}
+    });
+    return data;
+};
 
 callToUpdate = async () => {
     const data = await fetch(`https://be.trendly.now${IS_DEV ? "/dev" : ""}/discovery/extension/instagram`, {
@@ -299,32 +95,132 @@ callToUpdate = async () => {
     }).then(res => {
         if (!res.ok) throw new Error(`Server returned ${res.status}`);
         return res.json();
-    })
-    return data
+    });
+    return data;
+};
+
+// --- Show enrichment form ---
+
+function showForm() {
+    // Populate niche checkboxes
+    nicheGroup.innerHTML = NICHES.map(n => `
+        <label class="opt">
+            <input type="checkbox" name="niche" value="${esc(n)}"> <span>${esc(n)}</span>
+        </label>
+    `).join('\n');
+
+    // Render star rating
+    selectedStars = 0;
+    renderStars();
+
+    formSec.style.display = 'block';
+    confirmView.style.display = 'none';
 }
 
-submitBtn.addEventListener('click', async () => {
-    if (!lastData) return;
-    lastData = normalizeScrapedProfile(lastData);
-    try {
-        out.textContent = 'Sending data to server... Please wait!';
-        submitBtn.textContent = 'Submiting...';
-        submitBtn.disabled = true;
-        await navigator.clipboard.writeText(JSON.stringify(lastData, null, 2));
-        const data = await callToUpdate();
-        out.textContent = 'The data is sent to server. You can now proceed to other instagram profiles.\n' + JSON.stringify(data);
-        lastData = null
-        enableActions(false);
-        await clearManualDraft();
+// --- Show confirmation view ---
 
-        const formSec = document.getElementById('enrich-form');
-        const summarySec = document.getElementById('summary');
-        if (formSec) formSec.style.display = 'none';
-        if (summarySec) summarySec.style.display = 'none';
+function showConfirmation() {
+    const niches = Array.from(document.querySelectorAll('input[name="niche"]:checked'))
+        .map(el => /** @type {HTMLInputElement} */(el).value);
+
+    // Build lastData
+    lastData = normalizeScrapedProfile({
+        username: lastData.username,
+        manual: { niches, aestheticsScore: selectedStars }
+    });
+
+    // Render stars text
+    const starsText = selectedStars > 0
+        ? '\u2605'.repeat(selectedStars) + '\u2606'.repeat(5 - selectedStars)
+        : 'None';
+    document.getElementById('confirm-stars').textContent = starsText;
+
+    // Render niche chips
+    const nichesContainer = document.getElementById('confirm-niches');
+    nichesContainer.innerHTML = '';
+    if (niches.length === 0) {
+        const span = document.createElement('span');
+        span.className = 'chip';
+        span.textContent = 'No niches selected';
+        nichesContainer.appendChild(span);
+    } else {
+        niches.forEach(n => {
+            const span = document.createElement('span');
+            span.className = 'chip';
+            span.textContent = n;
+            nichesContainer.appendChild(span);
+        });
+    }
+
+    formSec.style.display = 'none';
+    confirmView.style.display = 'block';
+}
+
+// --- Button handlers ---
+
+btnScrape.addEventListener('click', () => {
+    showConfirmation();
+});
+
+btnEdit.addEventListener('click', () => {
+    // Re-show form without resetting selections (they persist in the DOM)
+    formSec.style.display = 'block';
+    confirmView.style.display = 'none';
+});
+
+btnConfirm.addEventListener('click', async () => {
+    btnConfirm.disabled = true;
+    btnConfirm.textContent = 'Submitting...';
+    btnEdit.disabled = true;
+
+    try {
+        const data = await callToUpdate();
+        confirmView.style.display = 'none';
+        setStatus('Submitted successfully! Move to the next profile.', 'success');
+        lastData = null;
     } catch (e) {
-        out.textContent = 'Error: ' + e.message;
-        submitBtn.disabled = false;
+        setStatus('Error: ' + e.message, 'error');
+        btnConfirm.disabled = false;
+        btnEdit.disabled = false;
     } finally {
-        submitBtn.textContent = 'Submit Profile';
+        btnConfirm.textContent = 'Confirm & Submit';
     }
 });
+
+// --- Auto-init on popup open ---
+
+(async function init() {
+    try {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+        const match = tab?.url?.match(/^https:\/\/www\.instagram\.com\/([^/]+)/);
+        const username = match ? match[1] : null;
+
+        if (!username || ['reels', 'explore', 'direct', 'accounts', 'stories', 'p'].includes(username)) {
+            setStatus('Open an Instagram profile page and reopen this extension.', 'error');
+            return;
+        }
+
+        // Valid profile detected
+        lastData = normalizeScrapedProfile({ username });
+        usernameEl.textContent = '@' + lastData.username;
+        usernameSection.style.display = 'block';
+        setStatus('Checking if profile exists...');
+
+        // Check if profile already exists on server
+        const checkResult = await callToCheck();
+
+        if (checkResult.exists) {
+            setStatus('This profile already exists on the server. Try another profile.', 'error');
+            return;
+        }
+
+        // New profile -- show the enrichment form
+        setStatus('New profile detected. Fill in the details and click Scrape.');
+        showForm();
+
+    } catch (err) {
+        console.error(err);
+        setStatus('Error: ' + err.message, 'error');
+    }
+})();

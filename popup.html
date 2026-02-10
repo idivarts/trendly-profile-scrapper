@@ -215,39 +215,59 @@
             height: 18px;
         }
 
-        input[type="text"],
-        input[list] {
-            width: 100%;
-            padding: 12px 14px;
-            background: #0f1218;
-            border: 1px solid rgba(255, 255, 255, .12);
-            border-radius: 10px;
-            color: var(--text);
-            font-size: 14px;
-        }
-
-        pre {
-            white-space: pre-wrap;
-            word-break: break-word;
-            background: #0f1218;
-            padding: 12px;
-            border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, .08);
-            max-height: 260px;
-            overflow: auto;
-        }
-
-        .footer {
-            padding: 12px 16px;
-            border-top: 1px solid rgba(255, 255, 255, .06);
+        /* Star rating */
+        .stars {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            gap: 6px;
         }
 
-        .right {
-            display: flex;
-            gap: 8px;
+        .star {
+            appearance: none;
+            background: none;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+            font-size: 28px;
+            line-height: 1;
+            color: rgba(255, 255, 255, .18);
+            transition: color .12s ease, transform .1s ease;
+        }
+
+        .star:hover {
+            transform: scale(1.15);
+        }
+
+        .star.active {
+            color: var(--brand-2);
+            filter: drop-shadow(0 0 4px rgba(240, 194, 75, .35));
+        }
+
+        /* Status message */
+        .status-msg {
+            padding: 10px 12px;
+            border-radius: var(--radius-sm);
+            background: linear-gradient(180deg, #10131a, #0d1016);
+            border: 1px solid rgba(255, 255, 255, .06);
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .status-msg.error {
+            color: var(--danger);
+            border-color: rgba(255, 107, 107, .2);
+        }
+
+        .status-msg.success {
+            color: var(--success);
+            border-color: rgba(46, 204, 113, .2);
+        }
+
+        /* Username display */
+        .username-display {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--brand);
+            padding: 4px 0;
         }
 
         /* Tabs header */
@@ -281,14 +301,6 @@
             height: 8px;
         }
 
-        .avatar {
-            width: 56px;
-            height: 56px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 1px solid rgba(255, 255, 255, .12);
-            background: #0f1218;
-        }
     </style>
 </head>
 
@@ -306,28 +318,23 @@
                 <span class="brand-badge">T</span>
                 <div>
                     <h3>Trendly — IG Profile Scraper</h3>
-                    <p>Scrape a profile then enrich and export JSON</p>
+                    <p>Select niches & quality, then scrape</p>
                 </div>
             </div>
             <span class="chip"><span class="dot"></span> v1.0</span>
         </div>
 
+        <!-- Status messages -->
         <div class="section">
-            <div class="row">
-                <button id="scrape" class="btn btn-primary">Scrape</button>
-                <button id="copy-json" class="btn btn-outline" disabled>Copy JSON</button>
-                <button id="submit" class="btn" disabled>Submit Profile</button>
-            </div>
-            <div class="helper" style="margin-top:10px;">
-                Open an Instagram profile in the active tab and click Scrape. For best results, use the /reels view.
-            </div>
+            <div id="ig-status" class="status-msg">Detecting profile...</div>
         </div>
 
-        <div class="section">
-            <h4 style="margin:0 0 8px 0;">Result</h4>
-            <pre id="out">No data yet.</pre>
+        <!-- Username (shown once extracted) -->
+        <div class="section" id="ig-username-section" style="display:none;">
+            <div class="username-display" id="ig-username"></div>
         </div>
 
+        <!-- Enrichment form (shown for new profiles) -->
         <div class="section" id="enrich-form" style="display:none;">
             <fieldset class="field">
                 <legend>1) Influencer Niche</legend>
@@ -336,49 +343,26 @@
             </fieldset>
 
             <fieldset class="field">
-                <legend>2) Influencer's Aesthetics/Quality</legend>
-                <div class="helper" style="margin:6px 0 8px;">Rate the overall visual quality and consistency of the
-                    profile</div>
-                <div class="options" style="align-items:center; gap:12px;">
-                    <input id="aesthetics-input" type="range" min="0" max="100" step="1" value="50" style="flex:1;" />
-                    <span id="aesthetics-value" class="chip" aria-live="polite">50</span>
-                </div>
+                <legend>2) Profile Quality</legend>
+                <div class="helper" style="margin:6px 0 8px;">Rate the overall visual quality and consistency</div>
+                <div class="stars" id="star-group"></div>
             </fieldset>
 
-            <div class="row" style="margin-top:12px;">
-                <button id="confirm-enrich" class="btn btn-primary">Confirm & Generate JSON</button>
+            <div class="row" style="margin-top:16px;">
+                <button id="btn-scrape" class="btn btn-primary">Scrape</button>
             </div>
         </div>
 
-        <div id="summary" style="display:none;">
-            <div class="section">
-                <h4 style="margin:0 0 8px 0;">Profile Summary</h4>
-
-                <div class="row" style="gap:12px; align-items:center; margin-bottom:8px;">
-                    <div>
-                        <div id="sum-username" style="color:var(--muted); font-weight:700; font-size:16px;"></div>
-                    </div>
-                </div>
+        <!-- Confirmation view (shown after clicking Scrape) -->
+        <div class="section" id="confirm-view" style="display:none;">
+            <h4 style="margin:0 0 10px 0;">Confirm your selections</h4>
+            <div class="row" style="margin:8px 0;">
+                <span class="chip">Quality: <span id="confirm-stars"></span></span>
             </div>
-            <div class="section">
-                <h4 style="margin:0 0 8px 0;">Manual Fields</h4>
-                <div class="row" style="margin:8px 0;">
-                    <span class="chip">Aesthetics: <span id="sum-aesthetics"></span></span>
-                </div>
-
-                <div class="row" id="sum-niches" style="margin:8px 0; gap:8px;"></div>
-
-                <div class="row" style="margin-top:12px;">
-                    <button id="edit-manual" class="btn btn-outline">Edit manual fields</button>
-                </div>
-            </div>
-        </div>
-
-        <div class="footer">
-            <span style="color:var(--muted);">Trendly</span>
-            <div class="right">
-                <button id="download-json" class="btn" disabled style="display:none;">Download</button>
-                <button id="copy-json" class="btn btn-outline" disabled style="display:none;">Copy</button>
+            <div class="row" id="confirm-niches" style="margin:8px 0; gap:8px;"></div>
+            <div class="row" style="margin-top:16px; gap:8px;">
+                <button id="btn-confirm" class="btn btn-primary">Confirm & Submit</button>
+                <button id="btn-edit" class="btn btn-outline">Edit</button>
             </div>
         </div>
     </div>
