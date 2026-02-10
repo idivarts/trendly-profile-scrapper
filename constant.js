@@ -1,13 +1,5 @@
 const LeadAccountID = "data-intern-2"
-
-const GENDERS = [
-    "male",
-    "female",
-    "couple",
-    "animal",
-    "lgbtq",
-    "gender-neutral",
-];
+const IS_DEV = true
 
 const NICHES = [
     "Fashion / Beauty",
@@ -44,15 +36,3 @@ const NICHES = [
     "Others",
 ];
 
-const LOCATIONS = [
-    "Mumbai",
-    "Delhi",
-    "Bengaluru",
-    "Hyderabad",
-    "Ahmedabad",
-    "Chennai",
-    "Kolkata",
-    "Pune",
-    "Surat",
-    "Jaipur"
-];

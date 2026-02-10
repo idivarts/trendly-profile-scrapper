@@ -8,9 +8,7 @@ const copyBtn = document.getElementById('copy-json');
 /** @typedef {Object} ScrapedProfile
  * @property {string} username
  * @property {Object} manual
- * @property {string} manual.gender
  * @property {string[]} manual.niches
- * @property {string} manual.location
  * @property {number} manual.aestheticsScore
  */
 
@@ -22,9 +20,7 @@ function defaultScrapedProfile() {
     return {
         username: 'unknown',
         manual: {
-            gender: 'unknown',
             niches: [],
-            location: 'unknown',
             aestheticsScore: 0
         }
     };
@@ -40,9 +36,7 @@ function normalizeScrapedProfile(raw) {
     return {
         username: (raw && typeof raw.username === 'string') ? raw.username.trim() : 'unknown',
         manual: {
-            gender: (typeof manual.gender === 'string') ? manual.gender : 'unknown',
             niches: Array.isArray(manual.niches) ? manual.niches : [],
-            location: (typeof manual.location === 'string') ? manual.location : 'unknown',
             aestheticsScore: (typeof manual.aestheticsScore === 'number') ? Math.max(0, Math.min(100, manual.aestheticsScore)) : 0
         }
     };
@@ -87,8 +81,6 @@ function renderSummary(data) {
     const d = normalizeScrapedProfile(data);
 
     const elUser = document.getElementById('sum-username');
-    const elGender = document.getElementById('sum-gender');
-    const elLocation = document.getElementById('sum-location');
     const elAesthetics = document.getElementById('sum-aesthetics');
     const elNiches = document.getElementById('sum-niches');
 
@@ -96,8 +88,6 @@ function renderSummary(data) {
     if (elUser) elUser.textContent = d.username ? '@' + d.username : 'unknown';
 
     // Manual fields
-    if (elGender) elGender.textContent = d.manual.gender || 'unknown';
-    if (elLocation) elLocation.textContent = d.manual.location || 'unknown';
     if (elAesthetics) elAesthetics.textContent = String(d.manual.aestheticsScore ?? 0);
 
     if (elNiches) {
@@ -138,9 +128,7 @@ function renderSummary(data) {
 async function renderManualFieldsForm() {
     enableActions(false);
     const formSec = document.getElementById('enrich-form');
-    const genderGroup = document.getElementById('gender-group');
     const nicheGroup = document.getElementById('niche-group');
-    const datalist = document.getElementById('location-list');
 
     // Initialize aesthetics slider
     const aestheticsInput = document.getElementById('aesthetics-input');
@@ -155,13 +143,6 @@ async function renderManualFieldsForm() {
         aestheticsInput.dataset.bound = '1';
     }
 
-    // Populate gender radios
-    genderGroup.innerHTML = GENDERS.map(g => `
-        <label class="opt">
-            <input type="radio" name="gender" value="${esc(g)}"> <span>${esc(g)}</span>
-        </label>
-    `).join("\n");
-
     // Populate niche checkboxes
     nicheGroup.innerHTML = NICHES.map(n => `
         <label class="opt">
@@ -169,17 +150,8 @@ async function renderManualFieldsForm() {
         </label>
     `).join("\n");
 
-    // Populate location options
-    datalist.innerHTML = LOCATIONS.map(l => `<option value="${esc(l)}"></option>`).join("\n");
-
     // Restore previous draft (if any)
     const saved = await getManualDraft();
-
-    // Set gender
-    if (saved && saved.gender) {
-        const gEl = genderGroup.querySelector(`input[name="gender"][value="${CSS.escape(saved.gender)}"]`);
-        if (gEl) gEl.checked = true;
-    }
 
     // Set niches
     if (saved && Array.isArray(saved.niches)) {
@@ -189,12 +161,6 @@ async function renderManualFieldsForm() {
         });
     }
 
-    // Set location
-    const locInput = document.getElementById('location-input');
-    if (locInput && saved && typeof saved.location === 'string') {
-        locInput.value = saved.location;
-    }
-
     // Set aesthetics
     if (aestheticsInput && aestheticsValue && saved && Number.isFinite(saved.aestheticsScore)) {
         aestheticsInput.value = String(saved.aestheticsScore);
@@ -202,25 +168,11 @@ async function renderManualFieldsForm() {
     }
 
     // Wire up persistence for changes
-    genderGroup.addEventListener('change', async (e) => {
-        const target = e.target;
-        if (target && target.name === 'gender' && target.checked) {
-            await saveManualDraft({ gender: target.value });
-        }
-    }, { once: false });
-
     nicheGroup.addEventListener('change', async () => {
         const selected = Array.from(document.querySelectorAll('input[name="niche"]:checked'))
             .map(el => /** @type {HTMLInputElement} */(el).value);
         await saveManualDraft({ niches: selected });
     }, { once: false });
-
-    if (locInput && !locInput.dataset.bound) {
-        locInput.addEventListener('input', async () => {
-            await saveManualDraft({ location: (locInput.value || '').trim() });
-        });
-        locInput.dataset.bound = '1';
-    }
 
     formSec.style.display = 'block';
 
@@ -228,27 +180,20 @@ async function renderManualFieldsForm() {
     const confirmBtn = document.getElementById('confirm-enrich');
     if (!confirmBtn.dataset.bound) {
         confirmBtn.addEventListener('click', async () => {
-            // Collect gender
-            const genderEl = /** @type {HTMLInputElement|null} */(document.querySelector('input[name="gender"]:checked'));
-            const gender = genderEl ? genderEl.value : "";
-
             // Collect niches (multi)
             const nicheEls = Array.from(document.querySelectorAll('input[name="niche"]:checked'));
             const niches = nicheEls.map(el => /** @type {HTMLInputElement} */(el).value);
-
-            // Collect location (allow free text)
-            const location = (locInput && locInput.value || "").trim();
 
             // Collect aesthetics/quality (0-100 integer)
             const aestheticsInputEl = document.getElementById('aesthetics-input');
             const aestheticsScore = aestheticsInputEl ? Math.max(0, Math.min(100, parseInt(aestheticsInputEl.value, 10) || 0)) : 0;
 
             // Persist the latest snapshot before merging
-            await saveManualDraft({ gender, niches, location, aestheticsScore });
+            await saveManualDraft({ niches, aestheticsScore });
 
             // Merge into lastData
             lastData = Object.assign({}, lastData || {}, {
-                manual: { gender, niches, location, aestheticsScore }
+                manual: { niches, aestheticsScore }
             });
 
             // Hide form and enable actions
@@ -328,7 +273,7 @@ copyBtn.addEventListener('click', async () => {
 
 // username
 callToCheck = async () => {
-    const data = await fetch('https://be.trendly.now/discovery/extension?username=' + encodeURIComponent(lastData.username), {
+    const data = await fetch(`https://be.trendly.now${IS_DEV ? "/dev" : ""}/discovery/extension/instagram?username=` + encodeURIComponent(lastData.username), {
         method: "GET",
         headers: {
             "X-USER-ID": LeadAccountID,
@@ -341,13 +286,16 @@ callToCheck = async () => {
 }
 
 callToUpdate = async () => {
-    const data = await fetch('https://be.trendly.now/discovery/extension', {
+    const data = await fetch(`https://be.trendly.now${IS_DEV ? "/dev" : ""}/discovery/extension/instagram`, {
         method: "POST",
         headers: {
             "X-USER-ID": LeadAccountID,
             "content-type": "application/json"
         },
-        body: JSON.stringify(lastData)
+        body: JSON.stringify({
+            socialType: "instagram",
+            ...lastData
+        })
     }).then(res => {
         if (!res.ok) throw new Error(`Server returned ${res.status}`);
         return res.json();

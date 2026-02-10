@@ -330,23 +330,13 @@
 
         <div class="section" id="enrich-form" style="display:none;">
             <fieldset class="field">
-                <legend>1) Gender</legend>
-                <div id="gender-group" class="options"></div>
-            </fieldset>
-
-            <fieldset class="field">
-                <legend>2) Influencer Niche</legend>
+                <legend>1) Influencer Niche</legend>
                 <div class="helper" style="margin:6px 0 8px;">Select all that apply</div>
                 <div id="niche-group" class="options"></div>
             </fieldset>
 
             <fieldset class="field">
-                <legend>3) Location</legend>
-                <input id="location-input" list="location-list" placeholder="Start typing a city" />
-                <datalist id="location-list"></datalist>
-            </fieldset>
-            <fieldset class="field">
-                <legend>4) Influencer's Aesthetics/Quality</legend>
+                <legend>2) Influencer's Aesthetics/Quality</legend>
                 <div class="helper" style="margin:6px 0 8px;">Rate the overall visual quality and consistency of the
                     profile</div>
                 <div class="options" style="align-items:center; gap:12px;">
@@ -373,8 +363,6 @@
             <div class="section">
                 <h4 style="margin:0 0 8px 0;">Manual Fields</h4>
                 <div class="row" style="margin:8px 0;">
-                    <span class="chip">Gender: <span id="sum-gender"></span></span>
-                    <span class="chip">Location: <span id="sum-location"></span></span>
                     <span class="chip">Aesthetics: <span id="sum-aesthetics"></span></span>
                 </div>
 
