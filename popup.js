@@ -192,7 +192,7 @@ btnConfirm.addEventListener('click', async () => {
 function extractUsername(url) {
     const match = url?.match(/^https:\/\/www\.instagram\.com\/([^/]+)/);
     const username = match ? match[1] : null;
-    if (!username || ['reels', 'explore', 'direct', 'accounts', 'stories', 'p'].includes(username)) {
+    if (!username || ['reel', 'reels', 'explore', 'direct', 'accounts', 'stories', 'p'].includes(username)) {
         return null;
     }
     return username;
