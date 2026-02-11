@@ -219,6 +219,7 @@
         .stars {
             display: flex;
             gap: 6px;
+            align-items: center;
         }
 
         .star {
@@ -229,17 +230,44 @@
             cursor: pointer;
             font-size: 28px;
             line-height: 1;
-            color: rgba(255, 255, 255, .18);
-            transition: color .12s ease, transform .1s ease;
+            position: relative;
+            display: inline-block;
+            transition: transform .1s ease;
         }
 
         .star:hover {
             transform: scale(1.15);
         }
 
-        .star.active {
+        .star .star-bg {
+            color: rgba(255, 255, 255, .18);
+        }
+
+        .star .star-fg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            overflow: hidden;
+            width: 0;
+            white-space: nowrap;
             color: var(--brand-2);
             filter: drop-shadow(0 0 4px rgba(240, 194, 75, .35));
+            pointer-events: none;
+        }
+
+        .star.active .star-fg {
+            width: 100%;
+        }
+
+        .star.half .star-fg {
+            width: 50%;
+        }
+
+        .star-value {
+            font-size: 13px;
+            color: var(--muted);
+            margin-left: 4px;
+            min-width: 30px;
         }
 
         /* Status message */

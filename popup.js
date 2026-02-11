@@ -37,7 +37,7 @@ function normalizeScrapedProfile(raw) {
         manual: {
             niches: Array.isArray(manual.niches) ? manual.niches : [],
             qualityScore: (typeof manual.qualityScore === 'number')
-                ? Math.max(0, Math.min(5, manual.qualityScore)) : 0
+                ? Math.max(0, Math.min(10, manual.qualityScore)) : 0
         }
     };
 }
@@ -52,18 +52,35 @@ function setStatus(msg, type) {
 function renderStars() {
     starGroup.innerHTML = '';
     for (let i = 1; i <= 5; i++) {
+        const fullVal = i * 2;      // e.g. star 3 → 6
+        const halfVal = i * 2 - 1;  // e.g. star 3 → 5
+        const isFull = selectedStars >= fullVal;
+        const isHalf = !isFull && selectedStars >= halfVal;
+
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.className = 'star' + (i <= selectedStars ? ' active' : '');
-        btn.textContent = i <= selectedStars ? '\u2605' : '\u2606';
+        btn.className = 'star' + (isFull ? ' active' : '') + (isHalf ? ' half' : '');
+        btn.innerHTML = '<span class="star-bg">\u2606</span><span class="star-fg">\u2605</span>';
         btn.setAttribute('aria-label', i + ' star' + (i > 1 ? 's' : ''));
         btn.addEventListener('click', () => {
-            // Toggle off if re-pressing the same star
-            selectedStars = (selectedStars === i) ? 0 : i;
+            // Cycle: full → half → none
+            if (selectedStars === fullVal) {
+                selectedStars = halfVal;   // full  → half
+            } else if (selectedStars === halfVal) {
+                selectedStars = 0;         // half  → none
+            } else {
+                selectedStars = fullVal;   // other → full
+            }
             renderStars();
         });
         starGroup.appendChild(btn);
     }
+
+    // Show current value indicator
+    const valSpan = document.createElement('span');
+    valSpan.className = 'star-value';
+    valSpan.textContent = selectedStars > 0 ? selectedStars + '/10' : '';
+    starGroup.appendChild(valSpan);
 }
 
 // --- API calls (kept from original) ---
@@ -129,9 +146,12 @@ function showConfirmation() {
         manual: { niches, qualityScore: selectedStars }
     });
 
-    // Render stars text
+    // Render stars text (selectedStars is 0-10; show as value/10 plus visual)
+    const fullCount = Math.floor(selectedStars / 2);
+    const hasHalf = selectedStars % 2 === 1;
+    const emptyCount = 5 - fullCount - (hasHalf ? 1 : 0);
     const starsText = selectedStars > 0
-        ? '\u2605'.repeat(selectedStars) + '\u2606'.repeat(5 - selectedStars)
+        ? '\u2605'.repeat(fullCount) + (hasHalf ? '\u00BD' : '') + '\u2606'.repeat(emptyCount) + ' (' + selectedStars + '/10)'
         : 'None';
     document.getElementById('confirm-stars').textContent = starsText;
 
