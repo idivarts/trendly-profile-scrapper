@@ -4,7 +4,7 @@ const $ = (id) => document.getElementById(id);
 const statusText = $("statusText");
 const totalCount = $("totalCount");
 
-function setStatus(msg) { statusText.textContent = msg; }
+function setModashStatus(msg) { statusText.textContent = msg; }
 function setCount(n) { totalCount.textContent = String(n); }
 
 // Get chrome storage and update the scrappedData variable
@@ -12,25 +12,25 @@ chrome.storage.local.get(["modashScrapedData"]).then((result) => {
     if (result.modashScrapedData) {
         scrapedData = Array.isArray(result.modashScrapedData) ? result.modashScrapedData : [];
         setCount(scrapedData.length);
-        setStatus(`Loaded ${scrapedData.length} items from storage`);
+        setModashStatus(`Loaded ${scrapedData.length} items from storage`);
     } else {
-        setStatus("No stored data. Click Scrape to begin.");
+        setModashStatus("No stored data. Click Scrape to begin.");
     }
 })
 
 $("btn-modash-clear").addEventListener("click", async () => {
     scrapedData = [];
     setCount(0);
-    setStatus("Cleared data");
+    setModashStatus("Cleared data");
     await chrome.storage.local.remove("modashScrapedData");
 });
 // Ask parent (content script) to scrape
 $("btn-modash-scrape").addEventListener("click", async () => {
-    setStatus("Scraping…");
+    setModashStatus("Scraping…");
     try {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         if (!tab || !tab.url.includes("marketer.modash.io")) {
-            setStatus('Please open a profile page like https://marketer.modash.io/discover/ and try again.');
+            setModashStatus('Please open a profile page like https://marketer.modash.io/discover/ and try again.');
             return;
         }
 
@@ -44,7 +44,7 @@ $("btn-modash-scrape").addEventListener("click", async () => {
         scrapedData.push(...localData.filter(item => !handleSet.has(item.handle)));
 
         setCount(scrapedData.length);
-        setStatus(`Scraped ${scrapedData.length} items`);
+        setModashStatus(`Scraped ${scrapedData.length} items`);
         console.log("Scraped data:", scrapedData);
 
         // save in chrome storage
@@ -54,7 +54,7 @@ $("btn-modash-scrape").addEventListener("click", async () => {
         // window.postMessage({ source: "trendly_modash_ui", type: "SCRAPE_COMPLETE", payload: scrapedData }, "*");
     } catch (err) {
         console.error(err);
-        setStatus("Scrape failed. See console.");
+        setModashStatus("Scrape failed. See console.");
     }
 });
 
@@ -62,9 +62,9 @@ $("btn-modash-scrape").addEventListener("click", async () => {
 $("btn-modash-copy").addEventListener("click", async () => {
     try {
         await navigator.clipboard.writeText(JSON.stringify(scrapedData, null, 2));
-        setStatus("JSON copied to clipboard");
+        setModashStatus("JSON copied to clipboard");
     } catch (e) {
-        setStatus("Copy failed. See console.");
+        setModashStatus("Copy failed. See console.");
         console.error(e);
     }
 });
@@ -72,7 +72,7 @@ $("btn-modash-copy").addEventListener("click", async () => {
 // Download CSV
 $("btn-modash-download").addEventListener("click", () => {
     if (!scrapedData.length) {
-        setStatus("No data to export. Run Scrape first.");
+        setModashStatus("No data to export. Run Scrape first.");
         return;
     }
     const csv = toCSV(scrapedData);
@@ -85,7 +85,7 @@ $("btn-modash-download").addEventListener("click", () => {
     a.click();
     URL.revokeObjectURL(url);
     a.remove();
-    setStatus("CSV downloaded");
+    setModashStatus("CSV downloaded");
 });
 
 // Listen for results from content script
@@ -96,7 +96,7 @@ window.addEventListener("message", (event) => {
     if (msg.type === "SCRAPE_RESULT") {
         scrapedData = Array.isArray(msg.payload) ? msg.payload : [];
         setCount(scrapedData.length);
-        setStatus(`Received ${scrapedData.length} items`);
+        setModashStatus(`Received ${scrapedData.length} items`);
         // Optionally preview in console
         console.log("Scraped data:", scrapedData);
     }
